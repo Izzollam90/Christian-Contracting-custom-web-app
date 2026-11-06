@@ -51,7 +51,7 @@ const rest = async (path, opts = {}) => {
 
 console.log('\nChecking your Supabase project...');
 try {
-  const health = await fetch(`${url}/auth/v1/health`);
+  const health = await fetch(`${url}/auth/v1/health`, { headers });
   if (health.ok) pass('project is reachable, auth is up');
   else fail('auth health endpoint returned ' + health.status, 'check VITE_SUPABASE_URL — it must be your own project, not a placeholder');
 } catch (e) {
@@ -61,7 +61,7 @@ try {
 const settings = await rest('settings?select=key&limit=1');
 if (settings.status === 200) {
   pass('migration 0001_init.sql is applied (settings table exists)');
-} else if (settings.status === 401 || settings.status === 403 || (settings.body?.code === '42P01')) {
+} else if (settings.status === 401 || settings.status === 403 || settings.status === 404 || settings.body?.code === '42P01' || settings.body?.code === 'PGRST205') {
   fail('database schema not found', 'open the Supabase SQL editor and run supabase/migrations/0001_init.sql, then run pnpm check again');
 } else {
   info(`settings query returned ${settings.status} (${settings.body?.message ?? 'no message'})`);
