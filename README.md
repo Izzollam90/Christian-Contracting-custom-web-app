@@ -6,7 +6,17 @@ Two apps for Herkey Maintenance:
 
 Both need Google and Apple sign-in, shared live data, and installable website versions.
 
-**Next step:** a coding agent finishes the build. Start with [`AGENTS.md`](AGENTS.md) and [`HANDOFF.md`](HANDOFF.md).
+## Quick start
+
+```
+pnpm install
+cp .env.example .env.local    # paste Project URL + anon public key from Supabase -> Project Settings -> API
+pnpm setup                    # PASS/FAIL checklist against your live Supabase project; prints the exact fix for anything missing
+pnpm dev:customer             # http://localhost:5173
+pnpm dev:staff                # http://localhost:5174
+```
+
+For coding agents finishing the build: start with [`AGENTS.md`](AGENTS.md) and [`HANDOFF.md`](HANDOFF.md).
 
 | Folder | Contents |
 |---|---|
@@ -22,14 +32,15 @@ All people, jobs and amounts in this repo are fictional sample data.
 ```
 pnpm install
 cp .env.example .env.local    # fill in VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY
+pnpm setup                    # check .env.local against the live project until all PASS
 pnpm dev:customer             # customer app
 pnpm dev:staff                # crew & office app
 pnpm typecheck && pnpm build  # verify
 pnpm test:db                  # migration + seed + RLS proof on embedded Postgres
 ```
 
-Database setup: apply `supabase/migrations/0001_init.sql` in the Supabase SQL editor, create the
-sample staff with `npx tsx scripts/seed-users.ts` (needs the service role key in `.env.local`),
-then load `supabase/seed.sql`. Sign-in methods (Google, Apple, Facebook, X, passkey, password,
+Database setup: apply `supabase/migrations/0001_init.sql` in the Supabase SQL editor, load
+`supabase/seed.sql`, then create the sample staff with `pnpm seed:users` (needs
+`SUPABASE_SERVICE_ROLE_KEY` in `.env.local`; scripts only, never the browser). Sign-in methods (Google, Apple, Facebook, X, passkey, password,
 magic link) are enabled in Supabase → Authentication → Providers. See [docs/security.md](docs/security.md)
 for the full security model and [HANDOFF.md](HANDOFF.md) for the phased plan.
