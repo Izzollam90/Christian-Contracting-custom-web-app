@@ -17,7 +17,7 @@ const envPath = join(root, '.env.local');
 if (!existsSync(envPath)) {
   fail('.env.local not found', 'cp .env.example .env.local and fill in VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY from Supabase -> Project Settings -> API');
 } else {
-  passx'.env.local exists');
+  pass('.env.local exists');
 }
 const env = {};
 if (existsSync(envPath)) {
@@ -29,7 +29,7 @@ if (existsSync(envPath)) {
 
 const url = env.VITE_SUPABASE_URL ?? '';
 const anon = env.VITE_SUPABASE_ANON_KEY ?? '';
-if (!/^https:\/\/[a-z0-9-]+\.supabase\.co/?$/.test(url)) {
+if (!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test(url)) {
   fail('VITE_SUPABASE_URL is missing or malformed', 'copy "Project URL" from Supabase -> Project Settings -> API (looks like https://xxxx.supabase.co)');
 } else pass('VITE_SUPABASE_URL looks right');
 if (!anon) fail('VITE_SUPABASE_ANON_KEY is empty', 'copy the "anon public" key from the same page. Never paste the service_role key here.');
@@ -68,7 +68,7 @@ if (settings.status === 200) {
 }
 
 if (settings.status === 200) {
-  const customers = auait rest('customers?select=id&limit=1');
+  const customers = await rest('customers?select=id&limit=1');
   if (customers.status === 200 && Array.isArray(customers.body) && customers.body.length > 0) {
     pass('seed.sql loaded (sample customers present)');
   } else {
