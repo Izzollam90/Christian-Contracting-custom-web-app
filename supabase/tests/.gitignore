@@ -1,0 +1,4 @@
+.pgdata/
+.sock/
+postgres.log
+node_modules/

@@ -1,4 +1,5 @@
 *.png
+!apps/*/public/icons/*.png
 Thumbs.db
 .DS_Store
 node_modules/

@@ -16,3 +16,20 @@ Both need Google and Apple sign-in, shared live data, and installable website ve
 | `docs/` | Consolidated requirements, decisions log, and the owner's original notes |
 
 All people, jobs and amounts in this repo are fictional sample data.
+
+## Build & run (web apps)
+
+```
+pnpm install
+cp .env.example .env.local    # fill in VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY
+pnpm dev:customer             # customer app
+pnpm dev:staff                # crew & office app
+pnpm typecheck && pnpm build  # verify
+pnpm test:db                  # migration + seed + RLS proof on embedded Postgres
+```
+
+Database setup: apply `supabase/migrations/0001_init.sql` in the Supabase SQL editor, create the
+sample staff with `npx tsx scripts/seed-users.ts` (needs the service role key in `.env.local`),
+then load `supabase/seed.sql`. Sign-in methods (Google, Apple, Facebook, X, passkey, password,
+magic link) are enabled in Supabase → Authentication → Providers. See [docs/security.md](docs/security.md)
+for the full security model and [HANDOFF.md](HANDOFF.md) for the phased plan.

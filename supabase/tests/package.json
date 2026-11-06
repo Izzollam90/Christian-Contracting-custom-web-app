@@ -1,0 +1,13 @@
+{
+  "name": "herkey-db-tests",
+  "private": true,
+  "type": "module",
+  "description": "Local harness: runs supabase/migrations + seed + rls_checks.sql on an embedded Postgres with stubbed Supabase auth. Usage: pnpm install && pnpm test",
+  "scripts": {
+    "test": "node run-local.mjs"
+  },
+  "devDependencies": {
+    "@embedded-postgres/linux-x64": "^18.1.0-beta.16",
+    "pg": "^8.13.1"
+  }
+}

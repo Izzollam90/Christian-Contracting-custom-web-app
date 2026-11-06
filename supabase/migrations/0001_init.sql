@@ -174,10 +174,12 @@ end $$;
 create trigger on_auth_user_created after insert on auth.users for each row execute function handle_new_user();
 -- Staff accounts: Admin changes role from 'Customer' to a staff role after the person's first sign-in.
 
--- Nobody but Admin may change role, rate or active flag.
+-- Nobody but Admin may change role, rate or active flag. When auth.uid() is null there is no
+-- authenticated caller (SQL editor / service role), which is an admin context: allowed.
 create or replace function guard_profile_update() returns trigger language plpgsql as $$
 begin
-  if (new.role, new.hourly_rate_cents, new.active, new.customer_id) is distinct from (old.role, old.hourly_rate_cents, old.active, old.customer_id)
+  if auth.uid() is not null
+     and (new.role, new.hourly_rate_cents, new.active, new.customer_id) is distinct from (old.role, old.hourly_rate_cents, old.active, old.customer_id)
      and not has_role('Admin') then
     raise exception 'Only an Admin can change role, rate, active status or customer link';
   end if;
