@@ -62,8 +62,23 @@ review — plus the two-session claim race. Run it with `pnpm test:db`.
 ## Operational checklist for the owner (Supabase dashboard)
 
 1. Enable the providers you want and paste their client IDs/secrets.
-2. Add production URLs to the Auth redirect allow-list.
-3. Set password policy (min length) and keep email confirmations on.
-4. Turn on the **Security Advisor** and resolve any warnings (RLS coverage, function grants).
-5. Keep the service role key out of the repo; rotate it if it ever leaks.
-6. Consider Supabase Vault for any future server-side secrets; never put them in client env vars.
+2. Add production URLs to the Auth redirect allow-list (dev: `http://localhost:5173`,
+   `http://localhost:5174`).
+3. Set password policy (**min length 12** — the frontend validates 12 too) and keep email
+   confirmations on.
+4. **Passkeys (WebAuthn):** Authentication → Passkeys — enable, display name "Herkey
+   Maintenance", dev RP ID `localhost`, allowed origins `http://localhost:5173` and
+   `http://localhost:5174`. In production use the real domain + HTTPS origins. Passkeys are
+   enabled by default in `@supabase/supabase-js` 2.119+ (no client flag needed); the apps call
+   `auth.signInWithPasskey()` / `auth.registerPasskey()`.
+5. Turn on the **Security Advisor** and resolve any warnings (RLS coverage, function grants).
+6. Keep the secret key (`sb_secret_…` / service role) out of the repo and out of chat; it
+   bypasses RLS. Rotate immediately if it is ever exposed. Only `scripts/seed-users.ts` uses it.
+7. Consider Supabase Vault for any future server-side secrets; never put them in client env vars.
+
+## Local env layout
+
+Both Vite apps set `envDir` to the repo root, so one root `.env.local` feeds both apps:
+`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (publishable `sb_publishable_…` key works here),
+`VITE_COMPANY_NAME`, `VITE_TIMEZONE`. `SUPABASE_SERVICE_ROLE_KEY` stays in the root `.env.local`
+for Node scripts only — never `VITE_`-prefixed, never imported by frontend code.

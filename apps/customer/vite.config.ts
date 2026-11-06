@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  // Load .env.local from the repository root so both apps share one config file.
+  envDir: '../../',
   plugins: [
     react(),
     VitePWA({

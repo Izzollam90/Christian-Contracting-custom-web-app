@@ -73,8 +73,8 @@ export function SignIn({ subtitle }: { subtitle: string }) {
               <div className="stack">
                 <label className="f">Full name<input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" /></label>
                 <label className="f">Email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" /></label>
-                <label className="f">Password (min 8 characters)<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" /></label>
-                <button className="btn gold" disabled={busy || !email || password.length < 8 || !name} onClick={() => void run(() => signUpWithPassword(email, password, name), 'Check your email to confirm, then sign in.')}>Create account</button>
+                <label className="f">Password (min 12 characters)<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" /></label>
+                <button className="btn gold" disabled={busy || !email || password.length < 12 || !name} onClick={() => void run(() => signUpWithPassword(email, password, name), 'Check your email to confirm, then sign in.')}>Create account</button>
                 <button className="btn ghost" onClick={() => setMode('oauth')}>← All sign-in options</button>
               </div>
             )}
