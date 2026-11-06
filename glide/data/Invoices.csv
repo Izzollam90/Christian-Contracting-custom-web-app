@@ -1,0 +1,4 @@
+﻿"InvoiceID","JobID","EstimateID","CustomerEmail","Status","IssuedAt","DueDate","PaidAt","PaymentMethod"
+"INV-3018","J-1038","","dana.whitfield@example.com","Unpaid","2026-10-29T21:00:00Z","2026-11-28","",""
+"INV-3016","J-1035","","linda.moss@example.com","Paid","2026-11-03T18:00:00Z","2026-12-03","2026-11-05T15:00:00Z","Check"
+"INV-3014","J-1033","EST-2047","greenfield.pm@example.com","Unpaid","2026-11-02T19:00:00Z","2026-12-02","",""

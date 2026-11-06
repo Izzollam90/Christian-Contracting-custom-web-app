@@ -1,0 +1,7 @@
+﻿"UserID","Name","Email","Phone","Role","HourlyRateCents","Active","InvitedBy","Photo"
+"U-01","Marcus Lee","marcus.lee@example.com","(717) 555-0110","Crew","2800","True","owner@example.com",""
+"U-02","Tasha Green","tasha.green@example.com","(717) 555-0111","Crew","3100","True","owner@example.com",""
+"U-03","Eli Ortiz","eli.ortiz@example.com","(717) 555-0112","Crew","2600","True","owner@example.com",""
+"U-04","Renee Carter","renee.carter@example.com","(717) 555-0120","CrewLead","3400","True","owner@example.com",""
+"U-05","Pat Kim","pat.kim@example.com","(717) 555-0130","Finance","","True","owner@example.com",""
+"U-06","Owner (replace with your email)","owner@example.com","(717) 555-0140","Admin","","True","owner@example.com",""

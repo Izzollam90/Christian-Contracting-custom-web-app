@@ -1,0 +1,6 @@
+﻿"LineID","InvoiceID","CustomerEmail","Description","Quantity","UnitPriceCents","LineTotalCents"
+"IL-001","INV-3018","dana.whitfield@example.com","Drywall repair labor (hours)","4","6000","24000"
+"IL-002","INV-3018","dana.whitfield@example.com","Compound, primer, paint","1","4600","4600"
+"IL-003","INV-3016","linda.moss@example.com","Storm door rehang","1","14500","14500"
+"IL-004","INV-3014","greenfield.pm@example.com","Electrical labor (hours)","2","9000","18000"
+"IL-005","INV-3014","greenfield.pm@example.com","Bath fan, 80 CFM","1","11900","11900"

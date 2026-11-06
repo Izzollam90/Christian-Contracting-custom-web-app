@@ -1,0 +1,6 @@
+﻿"Key","Value","Notes"
+"CompanyName","Herkey Maintenance","Christian Contracting is a possible legal/brand name"
+"Timezone","America/New_York","Reports use this for ""this month"""
+"GeofenceMeters","200","Clock-in distance check (supporting evidence only)"
+"OvertimeAfterHours","40","Weekly; paid at 1.5x. Not final."
+"InvoiceDueDays","30","Payment terms. Not final."

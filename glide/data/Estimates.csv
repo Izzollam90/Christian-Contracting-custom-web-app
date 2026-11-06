@@ -1,0 +1,5 @@
+﻿"EstimateID","JobID","CustomerEmail","Status","CreatedByEmail","CreatedAt","SentAt","RespondedAt","CustomerComment"
+"EST-2053","J-1046","dana.whitfield@example.com","Sent","renee.carter@example.com","2026-11-06T15:00:00Z","2026-11-06T15:05:00Z","",""
+"EST-2052","J-1045","greenfield.pm@example.com","Draft","eli.ortiz@example.com","2026-11-05T20:00:00Z","","",""
+"EST-2049","J-1041","dana.whitfield@example.com","Accepted","marcus.lee@example.com","2026-11-04T16:30:00Z","2026-11-04T16:35:00Z","2026-11-04T18:10:00Z",""
+"EST-2047","J-1033","greenfield.pm@example.com","Accepted","tasha.green@example.com","2026-10-28T14:00:00Z","2026-10-28T14:05:00Z","2026-10-28T19:00:00Z",""

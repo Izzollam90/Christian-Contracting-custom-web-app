@@ -1,0 +1,5 @@
+﻿"CustomerID","Name","Email","Phone","Street","City","State","Zip","Latitude","Longitude","CreatedAt"
+"C-01","Dana Whitfield","dana.whitfield@example.com","(717) 555-0142","410 Maple Ridge Rd, Apt 204","Lancaster","PA","17601","40.0412","-76.3021","2026-09-01T14:00:00Z"
+"C-02","Robert Ames","robert.ames@example.com","(717) 555-0157","18 Cedar St, Unit B","Lancaster","PA","17602","40.048","-76.2952","2026-09-01T14:00:00Z"
+"C-03","Greenfield Property Group","greenfield.pm@example.com","(717) 555-0188","22 Orchard Ln","Lancaster","PA","17603","40.0365","-76.289","2026-09-01T14:00:00Z"
+"C-04","Linda Moss","linda.moss@example.com","(717) 555-0163","77 King St","Lancaster","PA","17602","40.039","-76.31","2026-09-01T14:00:00Z"

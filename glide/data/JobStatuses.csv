@@ -1,0 +1,8 @@
+﻿"Status","StepOrder","IsOpen","CustomerLabel","Color"
+"Requested","1","True","We received your request","Blue"
+"Accepted","2","True","A crew member accepted","Purple"
+"Scheduled","3","True","Your visit is scheduled","Gold"
+"In Progress","4","True","Work is underway","Orange"
+"Completed","5","False","Job complete","Green"
+"On Hold","6","True","Paused, we will update you","Gray"
+"Canceled","7","False","Canceled","Red"

@@ -1,0 +1,6 @@
+﻿"Role","IsCustomer","IsCrew","IsCrewLead","IsFinance","IsAdmin","CanClaimJobs","CanAssignJobs","CanApproveExpenses","CanInvoice","CanSeeRawData","Description"
+"Customer","True","False","False","False","False","False","False","False","False","False","Submits requests; sees only their own jobs, estimates and invoices"
+"Crew","False","True","False","False","False","True","False","False","False","False","Claims and works jobs; records time and expenses; drafts estimates"
+"CrewLead","False","True","True","False","False","True","True","True","False","False","Assigns and schedules crew; approves expenses and flagged time"
+"Finance","False","False","False","True","False","False","False","True","True","False","Invoices, approved spending, time and payroll reports"
+"Admin","False","False","True","True","True","True","True","True","True","True","Everything, including users, roles and raw tables"
