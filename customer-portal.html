@@ -1,10 +1,10 @@
 <meta charset="utf-8">
-<title>LCM Customer Portal</title>
+<title>Herkey Customer Portal</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600&display=swap">
 <style>
-/* Layout: one-column customer app over a full-bleed liquid-gold canvas; glass panels float on it. Deliberately dark-only to match the Lancaster site. */
+/* Layout: one-column customer app over a full-bleed liquid-gold canvas; glass panels float on it. Deliberately dark-only in the dark-and-gold house style. */
 :root{
   color-scheme:dark;
   --ink:#0C0D0F; --ink-2:#131518; --panel:rgba(20,22,26,.72); --panel-solid:#16181C; --line:rgba(255,255,255,.09); --line-2:rgba(255,255,255,.16);
@@ -234,16 +234,16 @@ footer .wrap{display:flex;gap:12px 24px;flex-wrap:wrap;align-items:center}
 
 <div class="app">
   <header class="nav"><div class="wrap">
-    <a class="brand" href="#home" aria-label="Lancaster Consolidated Maintenance, home">
-      <span class="mono">LCM</span>
-      <span class="wordmark"><b>Lancaster</b><small>Consolidated Maintenance</small></span>
+    <a class="brand" href="#home" aria-label="Herkey Maintenance, home">
+      <span class="mono">HM</span>
+      <span class="wordmark"><b>Herkey</b><small>Maintenance</small></span>
     </a>
     <nav class="links" id="links" aria-label="Main"></nav>
     <div class="me" title="Signed in"><i>DW</i><span>Dana Whitfield</span></div>
   </div></header>
   <main id="main"></main>
   <footer><div class="wrap">
-    <span>Lancaster Consolidated Maintenance · Serving Lancaster County, Pennsylvania</span>
+    <span>Herkey Maintenance · Repairs, upkeep and property care</span>
     <span class="sample">Sample account</span>
     <a href="#home" data-reset style="margin-left:auto">Reset demo</a>
     <a id="staffLink" href="https://claude.ai/artifact/D4Y5B3ju1HQiMB4nTHfGNH" target="_blank" rel="noopener">Staff sign-in →</a>
@@ -342,7 +342,7 @@ function seed(){
       {id:'INV-3011',kind:'invoice',job:'J-1029',status:'Paid',date:now-34*DAY,due:now-4*DAY,lines:[['Storm door rehang',1,14500]]},
     ]};
 }
-const KEY='lcm-customer-v2'; let S;
+const KEY='herkey-customer-v2'; let S;
 try{ S=JSON.parse(localStorage.getItem(KEY)) }catch(e){}
 if(!S||S.v!==2) S=seed();
 const save=()=>{ try{ localStorage.setItem(KEY,JSON.stringify(S)) }catch(e){} };
@@ -379,7 +379,7 @@ V.home = () => {
   const owed = S.docs.filter(d=>d.kind==='invoice'&&d.status==='Unpaid').reduce((a,d)=>a+total(d),0);
   return `
   <section class="hero wrap">
-    <div class="eyebrow rule rise">Serving Lancaster County, Pennsylvania</div>
+    <div class="eyebrow rule rise">Herkey Maintenance · Customer portal</div>
     <h1 class="rise d1">One call, every solution.<span class="g">We've got it from here.</span></h1>
     <p class="lede rise d2"><span class="welcome">Welcome back, Dana.</span> Request a repair, pick a time that suits you, and follow your crew from the first call to the final walkthrough.</p>
     <div class="cta rise d3"><button class="btn gold" data-go="request">Request service ${svg('arrow',2)}</button><button class="btn" data-go="jobs">Track my jobs</button></div>

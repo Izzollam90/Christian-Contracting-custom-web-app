@@ -1,10 +1,10 @@
 <meta charset="utf-8">
-<title>LCM Crew & Office</title>
+<title>Herkey Crew & Office</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: staff workspace. Glass side rail + top bar over a slow topographic gold contour field; dense content panels. Dark-only to match the Lancaster brand. */
+/* Layout: staff workspace. Glass side rail + top bar over a slow topographic gold contour field; dense content panels. Dark-only in the dark-and-gold house style. */
 :root{
   color-scheme:dark;
   --ink:#0B0C0E; --ink-2:#121417; --panel:rgba(19,21,25,.78); --panel-2:rgba(255,255,255,.035); --line:rgba(255,255,255,.08); --line-2:rgba(255,255,255,.15);
@@ -199,7 +199,7 @@ dl.kv dt{color:var(--muted)} dl.kv dd{margin:0;min-width:0}
 
 <div class="app">
   <header class="top">
-    <div class="brand"><span class="mono-b">LCM</span><div><b>Crew &amp; Office</b><small>Lancaster Consolidated Maintenance</small></div></div>
+    <div class="brand"><span class="mono-b">HM</span><div><b>Crew &amp; Office</b><small>Herkey Maintenance</small></div></div>
     <label class="viewas"><span>Demo · view as</span><select id="role" aria-label="View as role"></select></label>
     <div class="who" id="who"></div>
   </header>
@@ -332,7 +332,7 @@ function seed(){
   time.push({id:uid('T'),user:'u3',in:sod(now-DAY)+7.6*HR,out:sod(now-DAY)+16*HR,site:'c3',check:'Needs review',dist:260,review:'Pending',note:'Gate locked, clocked in from the street.'});
   return {v:3, role:'Crew', views:{Crew:'today',CrewLead:'overview',Finance:'overview',Admin:'overview'}, users, customers, jobs, estimates, invoices, expenses, time, seq:{est:2054,inv:3019,x:522}, gps:{u1:'c1',u2:'off',u3:'off',u4:'off'}, answers:{}};
 }
-const KEY='lcm-staff-v3'; let S;
+const KEY='herkey-staff-v3'; let S;
 try{ S=JSON.parse(localStorage.getItem(KEY)) }catch(e){}
 if(!S||S.v!==3) S=seed();
 const save=()=>{ try{ localStorage.setItem(KEY,JSON.stringify(S)) }catch(e){} };

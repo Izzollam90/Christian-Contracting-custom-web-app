@@ -1,6 +1,6 @@
-# Lancaster Consolidated Maintenance – Apps
+# Herkey Maintenance – Apps
 
-Two separate apps built from the *Maintenance Application – Organized Notes* and the *Construction & Maintenance App Key Points*, styled to match the Lancaster Consolidated Maintenance website (near-black, gold, Archivo / Cormorant Garamond / Inter, animated background).
+Two separate apps built from the *Maintenance Application – Organized Notes* and the *Construction & Maintenance App Key Points*, in a dark-and-gold style (near-black, gold, Archivo / Cormorant Garamond / Inter, animated backgrounds).
 
 | File | Who it's for | Live preview (private until shared) |
 |---|---|---|
