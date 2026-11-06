@@ -1,5 +1,7 @@
 # Handoff: Herkey Maintenance apps
 
+> **Status (web track):** Phases 1–5 code is complete on branch `vibe/web-apps-9a27e0` (PR #1): migration fixed + proven by `pnpm test:db` (31 RLS checks + claim race), seed + `pnpm seed:users`, monorepo with both PWAs, sign-in via Google/Apple/Facebook/X/passkey/password/magic-link, PWA + security headers, `pnpm check` setup validator, CI workflow. Remaining owner-side: create the Supabase project + enable providers, apply migration/seed, deploy both apps, merge PR #1. Phase 6 (Glide) still waits on decision D1.
+
 **For:** the coding agent (Mistral Vibe) and the owner.
 **Goal:** ship two apps, a **Customer app** and a **Crew & Office app**, with **Google and Apple sign-in**, shared live data, and a **website version of each** that installs to a phone home screen. The Glide build is the other track; the websites are its backup.
 

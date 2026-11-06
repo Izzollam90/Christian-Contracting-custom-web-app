@@ -1,0 +1,20 @@
+{
+  "name": "herkey-maintenance-apps",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.34.6",
+  "scripts": {
+    "dev:customer": "pnpm --filter @herkey/customer dev",
+    "dev:staff": "pnpm --filter @herkey/staff dev",
+    "build": "pnpm -r --filter './apps/*' --filter './packages/*' build",
+    "typecheck": "pnpm -r --filter './apps/*' --filter './packages/*' typecheck",
+    "test:db": "pnpm --filter herkey-db-tests test",
+    "icons": "node scripts/make-icons.mjs",
+    "check": "node scripts/check-setup.mjs",
+    "seed:users": "tsx scripts/seed-users.ts"
+  },
+  "devDependencies": {
+    "sharp": "^0.33.5",
+    "tsx": "^4.19.2"
+  }
+}
