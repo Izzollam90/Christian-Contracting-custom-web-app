@@ -11,7 +11,8 @@
     "test:db": "pnpm --filter herkey-db-tests test",
     "icons": "node scripts/make-icons.mjs",
     "check": "node scripts/check-setup.mjs",
-    "seed:users": "tsx scripts/seed-users.ts"
+    "seed:users": "tsx scripts/seed-users.ts",
+    "test": "pnpm -r --filter ./packages/* test"
   },
   "devDependencies": {
     "sharp": "^0.33.5",
