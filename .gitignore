@@ -1,3 +1,11 @@
-﻿*.png
-.DS_Store
+*.png
 Thumbs.db
+.DS_Store
+node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+*.ods
+.vercel/
+.netlify/
