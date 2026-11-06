@@ -9,9 +9,12 @@
     "build": "pnpm -r --filter './apps/*' --filter './packages/*' build",
     "typecheck": "pnpm -r --filter './apps/*' --filter './packages/*' typecheck",
     "test:db": "pnpm --filter herkey-db-tests test",
-    "icons": "node scripts/make-icons.mjs"
+    "icons": "node scripts/make-icons.mjs",
+    "setup": "node scripts/check-setup.mjs",
+    "seed:users": "tsx scripts/seed-users.ts"
   },
   "devDependencies": {
-    "sharp": "^0.33.5"
+    "sharp": "^0.33.5",
+    "tsx": "^4.19.2"
   }
 }
