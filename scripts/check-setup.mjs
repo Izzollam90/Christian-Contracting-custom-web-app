@@ -1,5 +1,5 @@
 // Guided setup check: verifies .env.local against your real Supabase project and prints a
-// checklist with the exact next step for anything missing. Usage: pnpm setup
+// checklist with the exact next step for anything missing. Usage: pnpm check
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -17,7 +17,7 @@ const envPath = join(root, '.env.local');
 if (!existsSync(envPath)) {
   fail('.env.local not found', 'cp .env.example .env.local and fill in VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY from Supabase -> Project Settings -> API');
 } else {
-  pass('.env.local exists');
+  passx'.env.local exists');
 }
 const env = {};
 if (existsSync(envPath)) {
@@ -29,14 +29,14 @@ if (existsSync(envPath)) {
 
 const url = env.VITE_SUPABASE_URL ?? '';
 const anon = env.VITE_SUPABASE_ANON_KEY ?? '';
-if (!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test(url)) {
+if (!/^https:\/\/[a-z0-9-]+\.supabase\.co/?$/.test(url)) {
   fail('VITE_SUPABASE_URL is missing or malformed', 'copy "Project URL" from Supabase -> Project Settings -> API (looks like https://xxxx.supabase.co)');
 } else pass('VITE_SUPABASE_URL looks right');
 if (!anon) fail('VITE_SUPABASE_ANON_KEY is empty', 'copy the "anon public" key from the same page. Never paste the service_role key here.');
 else pass('VITE_SUPABASE_ANON_KEY is set');
 
 if (!url || !anon) {
-  console.log(`\n${failures} problem(s). Fix the above and run pnpm setup again.`);
+  console.log(`\n${failures} problem(s). Fix the above and run pnpm check again.`);
   process.exit(1);
 }
 
@@ -62,13 +62,13 @@ const settings = await rest('settings?select=key&limit=1');
 if (settings.status === 200) {
   pass('migration 0001_init.sql is applied (settings table exists)');
 } else if (settings.status === 401 || settings.status === 403 || (settings.body?.code === '42P01')) {
-  fail('database schema not found', 'open the Supabase SQL editor and run supabase/migrations/0001_init.sql, then run pnpm setup again');
+  fail('database schema not found', 'open the Supabase SQL editor and run supabase/migrations/0001_init.sql, then run pnpm check again');
 } else {
   info(`settings query returned ${settings.status} (${settings.body?.message ?? 'no message'})`);
 }
 
 if (settings.status === 200) {
-  const customers = await rest('customers?select=id&limit=1');
+  const customers = auait rest('customers?select=id&limit=1');
   if (customers.status === 200 && Array.isArray(customers.body) && customers.body.length > 0) {
     pass('seed.sql loaded (sample customers present)');
   } else {
@@ -87,5 +87,5 @@ console.log('  - Authentication -> Providers: enable Google / Apple / Facebook /
 console.log('  - Authentication -> URL Configuration: add http://localhost:5173 and your deploy URLs');
 console.log('  - Authentication -> Settings: enable WebAuthn passkeys (needs HTTPS in production)');
 console.log('\nFinally: pnpm install && pnpm dev:customer  (and pnpm dev:staff in another terminal)');
-console.log(failures === 0 ? '\nSETUP LOOKS GOOD' : `\n${failures} problem(s) to fix — run pnpm setup again after each fix.`);
+console.log(failures === 0 ? '\nSETUP LOOKS GOOD' : `\n${failures} problem(s) to fix — run pnpm check again after each fix.`);
 process.exit(failures === 0 ? 0 : 1);

@@ -11,10 +11,12 @@ Both need Google and Apple sign-in, shared live data, and installable website ve
 ```
 pnpm install
 cp .env.example .env.local    # paste Project URL + anon public key from Supabase -> Project Settings -> API
-pnpm setup                    # PASS/FAIL checklist against your live Supabase project; prints the exact fix for anything missing
+pnpm check                    # PASS/FAIL checklist against your live Supabase project; prints the exact fix for anything missing
 pnpm dev:customer             # http://localhost:5173
 pnpm dev:staff                # http://localhost:5174
 ```
+
+The checker is `pnpm check` — bare `pnpm setup` is a pnpm builtin and never runs the repo script.
 
 For coding agents finishing the build: start with [`AGENTS.md`](AGENTS.md) and [`HANDOFF.md`](HANDOFF.md).
 
@@ -32,7 +34,7 @@ All people, jobs and amounts in this repo are fictional sample data.
 ```
 pnpm install
 cp .env.example .env.local    # fill in VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY
-pnpm setup                    # check .env.local against the live project until all PASS
+pnpm check                    # check .env.local against the live project until all PASS
 pnpm dev:customer             # customer app
 pnpm dev:staff                # crew & office app
 pnpm typecheck && pnpm build  # verify
