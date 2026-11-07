@@ -32,7 +32,7 @@ everything private is protected by Postgres row-level security (RLS) and securit
 
 `supabase/tests/run-local.mjs` boots a real Postgres (embedded), stubs only the Supabase auth
 primitives, applies the migration + seed, and runs `supabase/tests/rls_checks.sql`:
-32 assertions covering cross-customer reads, crew privacy (job board, time, expenses, invoices),
+42 assertions covering cross-customer reads, crew privacy (job board, time, expenses, invoices),
 self-role-escalation, double claims, cancel/answer permissions, invoice permissions, time
 review, and 11 MFA checks (every money/access action fails at aal1 and passes at aal2)
 — plus the two-session claim race. Run it with `pnpm test:db`.

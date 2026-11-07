@@ -21,7 +21,8 @@ Read in this order: this file → `docs/requirements.md` → `prototype/*.html` 
 | `glide/Herkey-Maintenance-Glide-Data.xlsx` + `glide/data/*.csv` | Shared data for the two **Glide** apps: 17 tables of fictional sample rows | Ready to load into Glide |
 | `glide/1-…`, `glide/2-…` | Step-by-step Glide build guides | Not yet built in Glide |
 | `glide/build-data.ps1` | Regenerates the workbook and CSVs | Works (needs Excel on Windows) |
-| `supabase/migrations/0001_init.sql` | Postgres schema + row-level security + RPCs for the web apps | **Written but never run.** Phase 1 tests it |
+| `supabase/migrations/0001_init.sql` | Postgres schema + row-level security + RPCs for the web apps | Applied + tested (Phase 1) |
+| `supabase/migrations/0002_mfa_and_signin.sql` | MFA enforcement: `is_aal2()` helper, aal2-gated RPCs/policies/trigger, `admin_reset_mfa` RPC | Applied + tested (Phase 7) |
 | `docs/requirements.md` | Consolidated requirements | Source of truth for behavior |
 | `docs/source/` | Owner's original notes and key points (text) | Read-only reference |
 
@@ -29,13 +30,13 @@ Read in this order: this file → `docs/requirements.md` → `prototype/*.html` 
 
 | Concern | Choice | Why |
 |---|---|---|
-| Backend, DB, auth | **Supabase** (Postgres + Auth + Realtime + Storage) | Built-in **Google** and **Apple** sign-in; row-level security for the "protect at the data level" rule; realtime so both apps update live |
+| Backend, DB, auth | **Supabase** (Postgres + Auth + Realtime + Storage) | Built-in **Google** sign-in + **passkey (WebAuthn)** + **MFA (TOTP)**; row-level security for the "protect at the data level" rule; realtime so both apps update live |
 | Front end | **Vite + React + TypeScript**, one repo with two apps: `apps/customer`, `apps/staff`, plus `packages/shared` (types, Supabase client, design tokens) | Small, fast, easy for the next person to take over |
 | Installable | `vite-plugin-pwa` (manifest, icons, service worker) | "Add to Home screen" on Android and iPhone; no app store |
 | Hosting | **Vercel** or **Netlify**: two projects from one repo, e.g. `app.<domain>` (customer) and `crew.<domain>` (staff) | Free tier, HTTPS, preview deploys |
 | Styling | Port the CSS tokens from the prototypes (near-black `#0C0D0F`, gold `#C49A50` / `#E6C27E`; fonts Archivo, Cormorant Garamond, Inter) and their canvas backgrounds as-is | The owner approved this look |
 
-If you pick something else, say why in `docs/decisions.md`. Don't use a stack that can't do Google and Apple sign-in plus row-level security.
+If you pick something else, say why in `docs/decisions.md`. Don't use a stack that can't do Google sign-in, passkeys, MFA, and row-level security.
 
 ## 3. Decisions the owner must make (blockers are marked)
 
@@ -72,9 +73,9 @@ The agent **cannot** create these. Put the keys in `.env.local` (never commit th
 
 ### Phase 2: Shared package and auth
 - Monorepo (pnpm workspaces): `apps/customer`, `apps/staff`, `packages/shared`.
-- Sign-in screen with **Continue with Google**, **Continue with Apple** and an email magic link. Use Supabase Auth's OAuth redirect flow.
+- Sign-in screen with **Continue with Google** and **Sign in with a passkey**. Use Supabase Auth's OAuth redirect flow (Google) and WebAuthn (passkeys).~~Apple and magic link were removed in Phase 7.~~
 - The Customer app accepts any signed-in user (new users become Customer through the DB trigger). The Staff app shows "Your account doesn't have staff access yet. Ask an admin." unless the role is Crew, CrewLead, Finance or Admin.
-  **Done when:** Google sign-in works locally and on a preview deploy, and Apple works on the preview deploy (HTTPS).
+  **Done when:** Google sign-in works locally and on a preview deploy.
 
 ### Phase 3: Customer app (match `prototype/customer-portal.html`)
 - Home (hero, happening-now tracker, stats, service tiles), 4-step request (insert into `jobs` + `activity_log`), My jobs (+ detail drawer, cancel via `cancel_my_job`), Billing (accept/decline via `respond_estimate`).
@@ -91,8 +92,8 @@ The agent **cannot** create these. Put the keys in `.env.local` (never commit th
 
 ### Phase 5: Installable website backup and deploy
 - PWA manifest for each app (names "Herkey" and "Herkey Crew", gold HM icon at 192/512 px plus a maskable version), service worker that caches the app shell, and an offline banner.
-- Deploy both apps. Add the production URLs to Supabase Auth's redirect allow-list and to the Google and Apple consoles.
-  **Done when:** on a real Android phone and a real iPhone, both apps install from the browser, open full-screen, and sign in with Google and Apple.
+- Deploy both apps. Add the production URLs to Supabase Auth's redirect allow-list and to the Google Cloud Console.
+  **Done when:** on a real Android phone and a real iPhone, both apps install from the browser, open full-screen, and sign in with Google.
 
 ### Phase 6: Glide alignment (depends on D1)
 - (a): connect the Glide apps to the same Supabase Postgres and follow `glide/*.md`, mapping columns to the snake_case names.
