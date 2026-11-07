@@ -1,6 +1,6 @@
 # AGENTS.md: instructions for coding agents (Mistral Vibe and others)
 
-You are finishing the **Herkey Maintenance** apps: a Customer app and a Crew & Office app, with Google and Apple sign-in, shared live data, and installable website versions.
+You are finishing the **Herkey Maintenance** apps: a Customer web app and a Crew & Office web app, with **Google + passkey sign-in only**, **two-factor authentication** on money and access actions, shared live data, and home-screen install. (Apple sign-in was dropped on Nov 6. See HANDOFF.md Phase 7.)
 
 ## Start here
 1. Read `HANDOFF.md` in full. It has the plan, phases, done-criteria and the decisions the owner still owes.
@@ -32,4 +32,4 @@ docs/              requirements, decisions, source notes
 ```
 
 ## Definition of done (whole project)
-The full flow from requirements §10 passes on a real Android phone and a real iPhone, with five accounts (Customer, Crew, CrewLead, Finance, Admin), each signed in with Google or Apple. Every forbidden access is proven blocked by `supabase/tests`.
+The full flow from requirements §10 passes on a real Android phone and a real iPhone, with five accounts (Customer, Crew, CrewLead, Finance, Admin), each signed in with Google or a passkey, with 2FA on every money and access action. Every forbidden access is proven blocked by `supabase/tests`.

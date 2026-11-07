@@ -14,4 +14,7 @@ Record each choice not already in HANDOFF.md: date, decision, why, and who decid
 | 2026-11-06 | Passkey sign-up flow: create account via password/magic link, then "Add passkey" registers a WebAuthn credential (auth-js 2.119 API: signInWithPasskey / registerPasskey) | Newer supabase-js renamed the WebAuthn methods | Agent |
 | 2026-11-06 | D1 default (c): websites are the live system for now; glide/ stays as reference until the owner picks a Glide plan with SQL sources | Never run two live databases | Agent (default per HANDOFF) |
 | 2026-11-06 | D2: hosting provider free subdomains until the owner buys a domain | No domain decision yet | Agent (default) |
+| 2026-11-06 | **Sign-in reduced to Google + passkey only.** Remove Apple, Facebook, X, email+password, magic link. Supersedes the two sign-in rows above | Owner request | Owner |
+| 2026-11-06 | **Two-factor (TOTP) required** for Admin/Finance always; step-up 2FA for money and access actions for everyone, enforced in the DB via `aal2` (requirements §11) | Owner: "so people can't just send money" | Owner |
+| 2026-11-06 | **Web app first**; app-store builds later as a separate project. Confirms D1 (c): websites are the live system | Owner request | Owner |
 | 2026-11-06 | D4/D5/D6 defaults adopted: preferred time confirmed by office; no completion approval; 200 m geofence, 1.5× after 40 h/wk | HANDOFF §3 defaults | Agent |

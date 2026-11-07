@@ -20,8 +20,9 @@ Merged from the owner's two source documents (in `docs/source/`) and the owner's
 | **Customer app** | Customers | Request service, pick a preferred time, follow progress, review estimates (accept/decline), view invoices, cancel a request |
 | **Crew & Office app** | Crew, Crew Lead, Finance, Admin | Job board + claim, my jobs + status updates, time clock, expenses, scheduling, approvals, estimates → invoices, KPIs, team and roles, raw data tables |
 
-- **Sign-in with Google and with Apple** in both apps (owner, Nov 6). Email magic link is a nice-to-have fallback.
-- **A website version of each app** as a backup to the Glide apps (owner, Nov 6). It must be installable to a phone home screen (PWA) and work on Android and iPhone.
+- **Sign-in: Google and passkey only** in both apps (owner, Nov 6, later message, **replaces** the earlier Google + Apple request). Remove Apple, Facebook, X, email+password and magic link. New accounts are created with Google; after the first sign-in the app offers "Add a passkey" (Face ID / fingerprint / phone screen lock), and from then on either method works.
+- **Two-factor authentication** (owner, Nov 6). See §11.
+- **Web app first** (owner, Nov 6). The installable websites are the product for now. App-store (Play Store / App Store) builds come later, as a separate project. The websites must install to a phone home screen (PWA) on Android and iPhone.
 - The two apps must share **one** source of truth. A customer request appears on the crew job board, and crew updates appear on the customer's tracker.
 - Visual direction: dark near-black with gold accent and an animated background. The approved look is in `prototype/customer-portal.html` and `prototype/crew-portal.html` (open them in a browser).
 
@@ -76,6 +77,23 @@ Rules:
 
 ## 9. Not in the first release
 Job photos and media, automated SMS and email, online payments, accounting and Google connections, advanced payroll, multi-business. Build none of these unless the owner moves them in.
+
+## 11. Two-factor authentication (owner, Nov 6)
+Goal: nobody can move money or change who has access with just a stolen sign-in.
+
+- **Method:** authenticator-app codes (TOTP: Google Authenticator, Microsoft Authenticator, 1Password, etc.) using Supabase Auth MFA. Allow at least two factors per person so a lost phone isn't a lockout.
+- **Who must use it:**
+  | Role | 2FA |
+  |---|---|
+  | Admin, Finance | **Required to use the app at all.** After sign-in, they can't open any screen until they set up 2FA, then enter a code on each new session |
+  | CrewLead, Crew | Optional, but **required at the moment of a money or approval action** (step-up) |
+  | Customer | Optional, but **required at the moment of a money action** (step-up) |
+- **Money and access actions that require a verified 2FA session (`aal2`)**:
+  - Customer: accepting an estimate; any future online payment; changing their email or service address.
+  - Staff: sending an invoice, marking it paid, voiding it; creating an invoice from an estimate; approving or rejecting expenses; approving flagged time; changing roles, hourly rates or active status; payroll export; editing settings.
+- **Enforce it in the database, not just the screens.** The RPCs and policies for the actions above must check `auth.jwt() ->> 'aal' = 'aal2'` and refuse otherwise. The UI then asks for the code ("Enter the 6-digit code from your authenticator app") and retries.
+- **Recovery:** an Admin can remove a person's 2FA factors (server-side, logged) after verifying who they are in person or by phone. Removing an Admin's own factors needs a second Admin, or the owner using the Supabase dashboard.
+- **Tests:** add RLS/RPC checks proving each action above fails with an `aal1` session and succeeds with `aal2`.
 
 ## 10. Done means (key points §Completion checks)
 - The full request-to-completion flow passes with separate Customer, Crew, CrewLead, Finance and Admin accounts.

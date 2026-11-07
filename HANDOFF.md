@@ -3,7 +3,9 @@
 > **Status (web track):** Phases 1–5 code is complete on branch `vibe/web-apps-9a27e0` (PR #1): migration fixed + proven by `pnpm test:db` (31 RLS checks + claim race), seed + `pnpm seed:users`, monorepo with both PWAs, sign-in via Google/Apple/Facebook/X/passkey/password/magic-link, PWA + security headers, `pnpm check` setup validator, CI workflow. Remaining owner-side: create the Supabase project + enable providers, apply migration/seed, deploy both apps, merge PR #1. Phase 6 (Glide) still waits on decision D1.
 
 **For:** the coding agent (Mistral Vibe) and the owner.
-**Goal:** ship two apps, a **Customer app** and a **Crew & Office app**, with **Google and Apple sign-in**, shared live data, and a **website version of each** that installs to a phone home screen. The Glide build is the other track; the websites are its backup.
+**Goal:** ship two **web apps**, a **Customer app** and a **Crew & Office app**, with **Google + passkey sign-in**, **two-factor authentication** on money and access actions, shared live data, and home-screen install on phones. App-store builds come later, as a separate project.
+
+> **Change request, Nov 6 (owner). Do this next, as Phase 7.** Apple sign-in is dropped. Sign-in is **Google and passkey only**. Add **two-factor authentication** per `docs/requirements.md` §11. Entries in this file that still mention Apple, Facebook, X, password or magic link are superseded.
 
 Read in this order: this file → `docs/requirements.md` → `prototype/*.html` (open in a browser) → `supabase/migrations/0001_init.sql` → `glide/`.
 
@@ -52,7 +54,7 @@ The agent **cannot** create these. Put the keys in `.env.local` (never commit th
 
 1. **Supabase**: free project. Note the Project URL and anon key. The service role key is for scripts only, never the front end.
 2. **Google sign-in**: in Google Cloud Console, create an OAuth client (type: Web). Authorized redirect URI: `https://<project>.supabase.co/auth/v1/callback`. Paste the client ID and secret into Supabase → Authentication → Providers → Google.
-3. **Apple sign-in**: requires an **Apple Developer Program** membership (paid, yearly). Create a Services ID and a Sign in with Apple key, and use the same Supabase callback URL. Paste them into Supabase → Providers → Apple. **Apple only works on a real HTTPS domain**, not localhost.
+3. ~~Apple sign-in~~: **dropped by the owner (Nov 6).** No Apple Developer account needed. Instead: in Supabase → Authentication, turn on **Passkeys** and **Multi-Factor (TOTP)**. The Google OAuth consent screen also needs a **privacy policy URL** before Google lets the public sign in, so the apps must ship a `/privacy` page.
 4. **Vercel or Netlify**: connect this repo once it's on GitHub.
 5. **GitHub**: create an empty private repo and push this folder to it.
 
@@ -96,6 +98,20 @@ The agent **cannot** create these. Put the keys in `.env.local` (never commit th
 - (a): connect the Glide apps to the same Supabase Postgres and follow `glide/*.md`, mapping columns to the snake_case names.
 - (b): build a one-way sync and document the failover.
 - (c): archive `glide/`.
+
+### Phase 7: Google + passkey only, and two-factor authentication (owner change, Nov 6)
+1. **Trim sign-in.** In `packages/shared/src/auth.ts` and `SignIn.tsx`, keep only **Continue with Google** and **Sign in with a passkey**. Remove the Apple, Facebook and X buttons and glyphs, plus password sign-in/sign-up and magic link. Update `scripts/seed-users.ts`, `scripts/check-setup.mjs`, `README.md`, `.env.example` and `docs/security.md` to match.
+2. **Passkey enrollment.** After someone's first Google sign-in, show a one-time card: "Sign in faster next time. Add a passkey." Add a **Security** page in both apps listing passkeys and 2FA factors, with add and remove.
+3. **2FA (TOTP via Supabase MFA)** per requirements §11:
+   - Enrollment screen: QR code plus a manual key, a code to confirm, and a friendly name. Allow a second factor.
+   - **Admin/Finance gate:** if the role is Admin or Finance and the session is not `aal2`, show only "Set up two-factor" or "Enter your code". No other screens.
+   - **Step-up:** before each money or access action, if the session is `aal1`, prompt for a code and continue the action once verified.
+   - **Database enforcement:** add a helper `is_aal2()` (`coalesce(auth.jwt() ->> 'aal', '') = 'aal2'`) and require it in `respond_estimate` (accept path), `invoice_from_estimate`, the invoice update policy (send/paid/void), the expense review policy, the time review policy, profile role/rate/active changes (the `guard_profile_update` trigger, for signed-in callers), settings writes, and customer email/address updates. Put this in a **new** migration, `0002_mfa_and_signin.sql`; don't edit 0001.
+   - **Admin reset:** an RPC or Edge Function, Admin-only and `aal2`, that removes another user's MFA factors and writes an audit row.
+4. **Tests:** extend `supabase/tests` so every action above is proven to **fail at aal1 and pass at aal2**, and so Admin/Finance reads of money tables fail at aal1.
+5. **Privacy page:** add `/privacy` to both apps (simple plain-language policy; owner to review). Google requires it for the OAuth consent screen.
+
+**Done when:** `pnpm typecheck`, `pnpm build`, `pnpm test` and `pnpm test:db` all pass. The sign-in screen shows only Google and passkey. An Admin can't reach any screen without a verified code. A customer accepting an estimate is asked for a code. Report anything you couldn't test (real Google sign-in and passkeys need the owner's HTTPS deploy).
 
 ## 6. Rules for the agent
 - **No real personal data in the repo.** The owner has a Glide export with real customer names and addresses. Never commit it or copy from it. Use only `glide/data/*.csv` (fictional).
