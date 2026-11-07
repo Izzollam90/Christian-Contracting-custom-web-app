@@ -1,24 +1,25 @@
 import { useState } from 'react';
-import { Pill, usd, fmtDT, fmtShort } from '@herkey/shared';
+import { Pill, usd, fmtDT, fmtShort, useStepUp } from '@herkey/shared';
 import type { StaffData } from '../data';
 import { reviewExpense, reviewTime } from '../data';
 
-export default function Approvals({ data, reload }: { data: StaffData; reload: () => Promise<void> }) {
+export default function Approvals({ data, reload, aal2, refreshAal2 }: { data: StaffData; reload: () => Promise<void>; aal2: boolean; refreshAal2: () => Promise<void> }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const { requireStepUp, StepUpModal } = useStepUp(aal2, refreshAal2);
   const pendingExpenses = data.expenses.filter((e) => e.status === 'Submitted');
   const flaggedTime = data.time.filter((t) => t.review === 'Needs Review');
   const submitter = (id: string) => data.profiles.find((p) => p.id === id);
 
   const doExpense = async (id: number, status: 'Approved' | 'Rejected') => {
     setBusy(true); setErr('');
-    try { await reviewExpense(id, status); await reload(); }
+    try { await requireStepUp(async () => { await reviewExpense(id, status); await reload(); }); }
     catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
     finally { setBusy(false); }
   };
   const doTime = async (id: number, review: 'Approved' | 'Rejected') => {
     setBusy(true); setErr('');
-    try { await reviewTime(id, review); await reload(); }
+    try { await requireStepUp(async () => { await reviewTime(id, review); await reload(); }); }
     catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
     finally { setBusy(false); }
   };
@@ -87,6 +88,7 @@ export default function Approvals({ data, reload }: { data: StaffData; reload: (
         </div>
       </div>
       <div className="muted"><Pill status="Needs Review" /> = clocked in outside the 200 m geofence. Approve or reject — the record stays either way.</div>
+      {StepUpModal}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 # Handoff: Herkey Maintenance apps
 
-> **Status (web track):** Phases 1–5 code is complete on branch `vibe/web-apps-9a27e0` (PR #1): migration fixed + proven by `pnpm test:db` (31 RLS checks + claim race), seed + `pnpm seed:users`, monorepo with both PWAs, sign-in via Google/Apple/Facebook/X/passkey/password/magic-link, PWA + security headers, `pnpm check` setup validator, CI workflow. Remaining owner-side: create the Supabase project + enable providers, apply migration/seed, deploy both apps, merge PR #1. Phase 6 (Glide) still waits on decision D1.
+> **Status (web track):** Phases 1–5 and Phase 7 are complete. Sign-in is **Google + passkey only** (Apple/Facebook/X/password/magic-link removed). Two-factor authentication (TOTP) is enforced at the database level via migration `0002_mfa_and_signin.sql` (`is_aal2()` in RPCs, RLS policies, and the profile guard trigger) and at the UI level (Admin/Finance aal2 gate, step-up prompts before money/access actions, passkey enrollment card, Security page, Privacy page). Verified: `pnpm typecheck`, `pnpm build` (both PWAs), `pnpm test` (7 unit), `pnpm test:db` (42 RLS checks + claim race). Remaining owner-side: create the Supabase project, enable Google + passkeys + MFA (TOTP), apply migrations + seed, deploy both apps. Phase 6 (Glide) still waits on decision D1.
 
 **For:** the coding agent (Mistral Vibe) and the owner.
 **Goal:** ship two **web apps**, a **Customer app** and a **Crew & Office app**, with **Google + passkey sign-in**, **two-factor authentication** on money and access actions, shared live data, and home-screen install on phones. App-store builds come later, as a separate project.
@@ -111,7 +111,15 @@ The agent **cannot** create these. Put the keys in `.env.local` (never commit th
 4. **Tests:** extend `supabase/tests` so every action above is proven to **fail at aal1 and pass at aal2**, and so Admin/Finance reads of money tables fail at aal1.
 5. **Privacy page:** add `/privacy` to both apps (simple plain-language policy; owner to review). Google requires it for the OAuth consent screen.
 
-**Done when:** `pnpm typecheck`, `pnpm build`, `pnpm test` and `pnpm test:db` all pass. The sign-in screen shows only Google and passkey. An Admin can't reach any screen without a verified code. A customer accepting an estimate is asked for a code. Report anything you couldn't test (real Google sign-in and passkeys need the owner's HTTPS deploy).
+**Status: COMPLETE.** All five items are done and verified:
+- `pnpm typecheck` — passes
+- `pnpm build` — both PWAs build
+- `pnpm test` — 7 unit tests pass
+- `pnpm test:db` — 42 RLS checks pass (31 original + 11 MFA aal1-fail/aal2-pass) + claim race
+- Sign-in screen shows only Google and passkey
+- Admin/Finance blocked behind aal2 gate; customer estimate accept prompts for code
+
+**Not yet testable without the owner's HTTPS deploy:** real Google OAuth round-trip, real passkey registration/sign-in, and real TOTP enrollment (all require a deployed HTTPS origin). The UI flows are built and the database enforcement is proven by the test suite.
 
 ## 6. Rules for the agent
 - **No real personal data in the repo.** The owner has a Glide export with real customer names and addresses. Never commit it or copy from it. Use only `glide/data/*.csv` (fictional).

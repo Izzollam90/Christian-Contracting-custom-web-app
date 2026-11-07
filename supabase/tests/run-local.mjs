@@ -137,6 +137,16 @@ async function main() {
     create or replace function auth.uid() returns uuid language sql stable as $f$
       select nullif(nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub', '')::uuid
     $f$;
+    -- Mirrors Supabase: auth.jwt() returns the full JWT claims object.
+    create or replace function auth.jwt() returns jsonb language sql stable as $f$
+      select nullif(current_setting('request.jwt.claims', true), '')::jsonb
+    $f$;
+    -- Stub for auth.mfa_factors (used by admin_reset_mfa).
+    create table if not exists auth.mfa_factors (
+      id uuid primary key default gen_random_uuid(),
+      user_id uuid not null,
+      factor_type text not null default 'totp'
+    );
     grant usage on schema auth to anon, authenticated, service_role;
     do $p$
     begin
@@ -148,7 +158,11 @@ async function main() {
 
   console.log('Applying supabase/migrations/0001_init.sql...');
   await db.query(readFileSync(join(root, 'supabase/migrations/0001_init.sql'), 'utf8'));
-  ok('migration applied');
+  ok('migration 0001 applied');
+
+  console.log('Applying supabase/migrations/0002_mfa_and_signin.sql...');
+  await db.query(readFileSync(join(root, 'supabase/migrations/0002_mfa_and_signin.sql'), 'utf8'));
+  ok('migration 0002 applied');
 
   // Supabase grants table access to the authenticated role by default and lets RLS filter rows;
   // replicate that here. anon gets schema usage only, no table access.

@@ -1,35 +1,11 @@
 import { supabase } from './supabase';
 
-// All sign-in methods supported by Supabase Auth. Providers (Google, Apple, Facebook, X)
-// must be enabled in the Supabase dashboard with their client IDs/secrets.
-export type OAuthProvider = 'google' | 'apple' | 'facebook' | 'twitter';
-
-export const signInWithOAuth = async (provider: OAuthProvider): Promise<void> => {
+// Sign-in is Google + passkey only (Phase 7, Nov 6 owner change).
+// Apple, Facebook, X, password and magic-link were removed.
+export const signInWithOAuth = async (): Promise<void> => {
   const { error } = await supabase().auth.signInWithOAuth({
-    provider,
+    provider: 'google',
     options: { redirectTo: window.location.origin },
-  });
-  if (error) throw error;
-};
-
-export const signInWithMagicLink = async (email: string): Promise<void> => {
-  const { error } = await supabase().auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: window.location.origin },
-  });
-  if (error) throw error;
-};
-
-export const signInWithPassword = async (email: string, password: string) => {
-  const { error } = await supabase().auth.signInWithPassword({ email, password });
-  if (error) throw error;
-};
-
-export const signUpWithPassword = async (email: string, password: string, fullName: string) => {
-  const { error } = await supabase().auth.signUp({
-    email,
-    password,
-    options: { data: { full_name: fullName }, emailRedirectTo: window.location.origin },
   });
   if (error) throw error;
 };
@@ -48,4 +24,49 @@ export const registerPasskey = async () => {
 
 export const signOut = async (): Promise<void> => {
   await supabase().auth.signOut();
+};
+
+// ============ MFA (TOTP via Supabase Auth MFA) ============
+
+export const enrollMfaFactor = async (friendlyName: string) => {
+  const { data, error } = await supabase().auth.mfa.enroll({
+    factorType: 'totp',
+    friendlyName,
+  });
+  if (error) throw error;
+  return data;
+};
+
+export const createMfaChallenge = async (factorId: string) => {
+  const { data, error } = await supabase().auth.mfa.challenge({ factorId });
+  if (error) throw error;
+  return data;
+};
+
+export const verifyMfaChallenge = async (factorId: string, challengeId: string, code: string) => {
+  const { data, error } = await supabase().auth.mfa.verify({
+    factorId,
+    challengeId,
+    code,
+  });
+  if (error) throw error;
+  return data;
+};
+
+export const unenrollMfaFactor = async (factorId: string) => {
+  const { error } = await supabase().auth.mfa.unenroll({ factorId });
+  if (error) throw error;
+};
+
+export const listMfaFactors = async () => {
+  const { data, error } = await supabase().auth.mfa.listFactors();
+  if (error) throw error;
+  return data;
+};
+
+// Returns true if the current session is aal2 (second factor verified).
+export const isAal2 = async (): Promise<boolean> => {
+  const { data, error } = await supabase().auth.mfa.getAuthenticatorAssuranceLevel();
+  if (error || !data) return false;
+  return data.currentLevel === 'aal2';
 };

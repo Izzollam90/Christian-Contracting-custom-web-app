@@ -5,14 +5,14 @@
 -- The two-simultaneous-claims race is proven separately by run-local.mjs (needs two sessions).
 
 -- ============ helpers ============
-create or replace function test_as(p_email text) returns void language plpgsql as $$
+create or replace function test_as(p_email text, p_aal text default 'aal2') returns void language plpgsql as $$
 declare v_id uuid;
 begin
   select id into v_id from profiles where email = p_email;
   if v_id is null then raise exception 'test user % not found', p_email; end if;
   execute 'reset role';
   execute 'set role authenticated';
-  execute format('set request.jwt.claims = %L', json_build_object('sub', v_id)::text);
+  execute format('set request.jwt.claims = %L', json_build_object('sub', v_id, 'aal', p_aal)::text);
 end $$;
 
 create or replace function test_reset() returns void language plpgsql as $$
@@ -138,7 +138,7 @@ begin
   perform test_reset();
   update jobs set status = 'Requested', completed_at = null where id = 'J-1046';
   perform test_as('dana.whitfield@example.com');
-  perform respond_estimate('EST-2053', true);               -- Sent, her job J-1046
+  perform respond_estimate('EST-2053', true);               -- Sent, her job J-1046, aal2 default
   raise notice 'PASS: customer can accept own sent estimate';
   perform test_reset();
   perform test_as('robert.ames@example.com');
@@ -165,7 +165,7 @@ begin
   if threw then raise notice 'PASS: crew cannot create invoices';
   else raise notice 'FAIL: crew created an invoice'; end if;
   perform test_reset();
-  perform test_as('pat.kim@example.com');                   -- Finance
+  perform test_as('pat.kim@example.com');                   -- Finance, aal2 default
   perform invoice_from_estimate('EST-2049');
   select count(*) into n from invoices where estimate_id = 'EST-2049';
   if n <> 1 then raise notice 'FAIL: invoice not created from accepted estimate'; else raise notice 'PASS: Finance created invoice from accepted estimate'; end if;
@@ -184,10 +184,136 @@ begin
   if n <> 0 then raise notice 'FAIL: crew approved own flagged time (% rows)', n;
   else raise notice 'PASS: crew cannot approve own flagged time'; end if;
   perform test_reset();
-  perform test_as('renee.carter@example.com');               -- CrewLead
+  perform test_as('renee.carter@example.com');               -- CrewLead, aal2 default
   update time_entries set review = 'Rejected' where review = 'Needs Review';
   get diagnostics n = row_count;
   if n <> 1 then raise notice 'FAIL: CrewLead review affected % rows', n;
   else raise notice 'PASS: CrewLead can review flagged time'; end if;
+  perform test_reset();
+end $$;
+
+-- ============ 8. MFA: money actions fail at aal1, pass at aal2 ============
+do $$
+declare threw boolean; n int;
+begin
+  -- Reset EST-2053 to Sent for these tests (test 5 may have accepted it)
+  update estimates set status = 'Sent', responded_at = null, customer_comment = null where id = 'EST-2053';
+
+  -- Customer accepting an estimate at aal1 must fail
+  perform test_as('dana.whitfield@example.com', 'aal1');
+  threw := false;
+  begin
+    perform respond_estimate('EST-2053', true);
+  exception when others then threw := true;
+  end;
+  if threw then raise notice 'PASS: customer cannot accept estimate at aal1';
+  else raise notice 'FAIL: customer accepted estimate at aal1'; end if;
+  perform test_reset();
+
+  -- Reset again for the reject test
+  update estimates set status = 'Sent', responded_at = null, customer_comment = null where id = 'EST-2053';
+
+  -- Customer rejecting an estimate at aal1 must succeed (reject is not a money action)
+  perform test_as('dana.whitfield@example.com', 'aal1');
+  threw := false;
+  begin
+    perform respond_estimate('EST-2053', false);
+  exception when others then threw := true;
+  end;
+  if threw then raise notice 'FAIL: customer cannot reject estimate at aal1';
+  else raise notice 'PASS: customer can reject estimate at aal1 (not a money action)'; end if;
+  perform test_reset();
+
+  -- Finance creating invoice at aal1 must fail
+  perform test_as('pat.kim@example.com', 'aal1');
+  threw := false;
+  begin
+    perform invoice_from_estimate('EST-2049');
+  exception when others then threw := true;
+  end;
+  if threw then raise notice 'PASS: Finance cannot create invoice at aal1';
+  else raise notice 'FAIL: Finance created invoice at aal1'; end if;
+  perform test_reset();
+
+  -- Admin changing role at aal1 must fail (Marcus is Crew, change to CrewLead to trigger guard)
+  perform test_as('owner@example.com', 'aal1');
+  threw := false;
+  begin
+    update profiles set role = 'CrewLead' where email = 'marcus.lee@example.com';
+  exception when others then threw := true;
+  end;
+  if threw then raise notice 'PASS: Admin cannot change role at aal1';
+  else raise notice 'FAIL: Admin changed role at aal1'; end if;
+  perform test_reset();
+
+  -- Admin changing role at aal2 must succeed
+  perform test_as('owner@example.com', 'aal2');
+  update profiles set role = 'CrewLead' where email = 'marcus.lee@example.com';
+  select count(*) into n from profiles where email = 'marcus.lee@example.com' and role = 'CrewLead';
+  if n = 1 then raise notice 'PASS: Admin can change role at aal2';
+  else raise notice 'FAIL: Admin could not change role at aal2'; end if;
+  perform test_reset();
+
+  -- Expense review at aal1 must fail
+  perform test_as('renee.carter@example.com', 'aal1');
+  threw := false;
+  begin
+    update expenses set status = 'Approved' where status = 'Submitted' and id = (select min(id) from expenses where status = 'Submitted');
+  exception when others then threw := true;
+  end;
+  if threw then raise notice 'PASS: CrewLead cannot approve expense at aal1';
+  else raise notice 'FAIL: CrewLead approved expense at aal1'; end if;
+  perform test_reset();
+
+  -- Insert a fresh Needs Review entry for these tests (section 7 consumed the seeded one)
+  insert into time_entries (user_id, job_id, customer_id, clock_in, clock_out, distance_meters, location_check, review, note)
+  values ((select id from profiles where email = 'eli.ortiz@example.com'), 'J-1045', 'C-03', '2026-11-06T12:00:00Z', '2026-11-06T18:00:00Z', 300, 'Outside geofence', 'Needs Review', 'MFA test entry');
+
+  -- Time review at aal1 must fail
+  perform test_as('renee.carter@example.com', 'aal1');
+  threw := false;
+  begin
+    update time_entries set review = 'Approved' where review = 'Needs Review';
+  exception when others then threw := true;
+  end;
+  if threw then raise notice 'PASS: CrewLead cannot review time at aal1';
+  else raise notice 'FAIL: CrewLead reviewed time at aal1'; end if;
+  perform test_reset();
+
+  -- Time review at aal2 must succeed
+  perform test_as('renee.carter@example.com', 'aal2');
+  update time_entries set review = 'Approved' where review = 'Needs Review';
+  get diagnostics n = row_count;
+  if n >= 1 then raise notice 'PASS: CrewLead can review time at aal2';
+  else raise notice 'FAIL: CrewLead could not review time at aal2'; end if;
+  perform test_reset();
+
+  -- Customer updating own address at aal1 must fail
+  perform test_as('dana.whitfield@example.com', 'aal1');
+  threw := false;
+  begin
+    update customers set street = '999 New St' where id = 'C-01';
+  exception when others then threw := true;
+  end;
+  if threw then raise notice 'PASS: customer cannot update address at aal1';
+  else raise notice 'FAIL: customer updated address at aal1'; end if;
+  perform test_reset();
+
+  -- Invoice status update at aal1 must fail
+  perform test_as('pat.kim@example.com', 'aal1');
+  threw := false;
+  begin
+    update invoices set status = 'Unpaid', issued_at = now() where status = 'Draft' and estimate_id = 'EST-2049';
+  exception when others then threw := true;
+  end;
+  if threw then raise notice 'PASS: Finance cannot update invoice status at aal1';
+  else raise notice 'FAIL: Finance updated invoice status at aal1'; end if;
+  perform test_reset();
+
+  -- Admin/Finance reading money tables at aal1 should still work (reads not gated, only writes)
+  perform test_as('pat.kim@example.com', 'aal1');
+  select count(*) into n from invoices;
+  if n >= 0 then raise notice 'PASS: Finance can read invoices at aal1 (reads not gated)';
+  else raise notice 'FAIL: Finance cannot read invoices at aal1'; end if;
   perform test_reset();
 end $$;

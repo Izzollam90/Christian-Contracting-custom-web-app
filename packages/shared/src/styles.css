@@ -289,3 +289,10 @@ footer .wrap{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
 .oauth-btn svg{width:20px;height:20px;flex:none}
 .divider{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:.8rem;margin-block:14px}
 .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line-2)}
+
+.modal-overlay{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);padding:20px}
+.modal-overlay>.glass{width:100%;max-width:380px}
+.f{display:flex;flex-direction:column;gap:4px;font-size:.85rem;color:var(--muted)}
+.f input{padding:10px 12px;border-radius:8px;border:1px solid var(--line-2);background:rgba(255,255,255,.05);color:var(--text);font-size:1rem}
+.f input:focus{outline:none;border-color:var(--gold)}
+.badge-count{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--gold);color:var(--on-gold);font-size:.72rem;font-weight:700;margin-left:6px}

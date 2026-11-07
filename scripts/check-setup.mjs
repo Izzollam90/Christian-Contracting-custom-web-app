@@ -83,7 +83,8 @@ if (settings.status === 200) {
 }
 
 console.log('\nThen, in the Supabase dashboard:');
-console.log('  - Authentication -> Providers: enable Google / Apple / Facebook / X / Email, paste each client ID+secret');
+console.log('  - Authentication -> Providers: enable Google; paste the client ID+secret from Google Cloud Console');
+console.log('  - Authentication -> Settings: enable WebAuthn passkeys and MFA (TOTP)');
 console.log('  - Authentication -> URL Configuration: add http://localhost:5173 and your deploy URLs');
 console.log('  - Authentication -> Settings: enable WebAuthn passkeys (needs HTTPS in production)');
 console.log('\nFinally: pnpm install && pnpm dev:customer  (and pnpm dev:staff in another terminal)');

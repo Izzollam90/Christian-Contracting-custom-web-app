@@ -1,22 +1,28 @@
 import { useState } from 'react';
-import { Pill, ROLE_LABEL, useAuth } from '@herkey/shared';
+import { Pill, ROLE_LABEL, useAuth, useStepUp } from '@herkey/shared';
 import type { StaffData } from '../data';
 import type { AppRole } from '@herkey/shared';
 import { setProfileRole, inviteStaff } from '../data';
 
 const STAFF_ROLES: AppRole[] = ['Customer', 'Crew', 'CrewLead', 'Finance', 'Admin'];
 
-export default function Team({ data, reload }: { data: StaffData; reload: () => Promise<void> }) {
+export default function Team({ data, reload, aal2, refreshAal2 }: { data: StaffData; reload: () => Promise<void>; aal2: boolean; refreshAal2: () => Promise<void> }) {
   const { profile } = useAuth();
   const [inviteEmail, setInviteEmail] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [msg, setMsg] = useState('');
+  const { requireStepUp, StepUpModal } = useStepUp(aal2, refreshAal2);
 
   const changeRole = async (id: string, role: AppRole) => {
     setBusy(true); setErr('');
-    try { await setProfileRole(id, role); setMsg(`Role updated to ${ROLE_LABEL[role]}.`); await reload(); }
-    catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    try {
+      await requireStepUp(async () => {
+        await setProfileRole(id, role);
+        setMsg(`Role updated to ${ROLE_LABEL[role]}.`);
+        await reload();
+      });
+    } catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
     finally { setBusy(false); }
   };
 
@@ -36,7 +42,7 @@ export default function Team({ data, reload }: { data: StaffData; reload: () => 
         <div>
           <div className="eyebrow">Team & access</div>
           <h2>People and roles</h2>
-          <p>Admin only. New sign-ups start as Customer; assign staff roles here. Nobody can change their own role (enforced in the database).</p>
+          <p>Admin only. New sign-ups start as Customer; assign staff roles here. Nobody can change their own role (enforced in the database). Role changes require 2FA.</p>
         </div>
       </div>
       {err && <div className="err" role="alert">{err}</div>}
@@ -79,6 +85,7 @@ export default function Team({ data, reload }: { data: StaffData; reload: () => 
           </table>
         </div>
       </div>
+      {StepUpModal}
     </div>
   );
 }

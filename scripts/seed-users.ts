@@ -47,7 +47,7 @@ for (const person of staff) {
       email,
       email_confirm: true,
       user_metadata: { full_name: person.Name },
-      password: crypto.randomUUID() + '!Aa1', // random throwaway; owners sign in with Google/Apple
+      password: crypto.randomUUID() + '!Aa1', // random throwaway; owners sign in with Google or a passkey
     });
     if (error) throw error;
     console.log(`created auth user ${email}`);
@@ -63,4 +63,4 @@ for (const person of staff) {
   if (updErr) throw updErr;
   console.log(`role ${email} -> ${person.Role}`);
 }
-console.log('Done. Sample staff can now sign in with Google or Apple.');
+console.log('Done. Sample staff can now sign in with Google or a passkey.');

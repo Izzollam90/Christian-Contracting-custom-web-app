@@ -4,7 +4,7 @@ Two apps for Herkey Maintenance:
 - a **Customer app** for requesting service, tracking jobs, and handling estimates and invoices
 - a **Crew & Office app** for Crew, Crew Lead, Finance and Admin
 
-Both need Google and Apple sign-in, shared live data, and installable website versions.
+Both need Google and passkey sign-in, two-factor authentication on money and access actions, shared live data, and installable website versions.
 
 ## Quick start
 
@@ -41,8 +41,8 @@ pnpm typecheck && pnpm build  # verify
 pnpm test:db                  # migration + seed + RLS proof on embedded Postgres
 ```
 
-Database setup: apply `supabase/migrations/0001_init.sql` in the Supabase SQL editor, load
+Database setup: apply `supabase/migrations/0001_init.sql` and `0002_mfa_and_signin.sql` in the Supabase SQL editor, load
 `supabase/seed.sql`, then create the sample staff with `pnpm seed:users` (needs
-`SUPABASE_SERVICE_ROLE_KEY` in `.env.local`; scripts only, never the browser). Sign-in methods (Google, Apple, Facebook, X, passkey, password,
-magic link) are enabled in Supabase → Authentication → Providers. See [docs/security.md](docs/security.md)
+`SUPABASE_SERVICE_ROLE_KEY` in `.env.local`; scripts only, never the browser). Sign-in is Google + passkey only.
+MFA (TOTP) is enabled in Supabase → Authentication. See [docs/security.md](docs/security.md)
 for the full security model and [HANDOFF.md](HANDOFF.md) for the phased plan.

@@ -1,16 +1,16 @@
 import { useState } from 'react';
-import { Pill, usd, fmtDT, hoursBetween } from '@herkey/shared';
+import { Pill, usd, fmtDT, hoursBetween, useStepUp } from '@herkey/shared';
 import type { StaffData } from '../data';
 import { reviewTime } from '../data';
 
 const OT_AFTER_H = 40;
 
-export default function Payroll({ data, reload }: { data: StaffData; reload: () => Promise<void> }) {
+export default function Payroll({ data, reload, aal2, refreshAal2 }: { data: StaffData; reload: () => Promise<void>; aal2: boolean; refreshAal2: () => Promise<void> }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const { requireStepUp, StepUpModal } = useStepUp(aal2, refreshAal2);
   const user = (id: string) => data.profiles.find((p) => p.id === id);
 
-  // Weekly hours per crew member (Mon–Sun weeks in company tz approximated by ISO week).
   const weekOf = (iso: string) => {
     const d = new Date(iso);
     const day = (d.getUTCDay() + 6) % 7;
@@ -35,7 +35,7 @@ export default function Payroll({ data, reload }: { data: StaffData; reload: () 
 
   const doReview = async (id: number, review: 'Approved' | 'Rejected') => {
     setBusy(true); setErr('');
-    try { await reviewTime(id, review); await reload(); }
+    try { await requireStepUp(async () => { await reviewTime(id, review); await reload(); }); }
     catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
     finally { setBusy(false); }
   };
@@ -46,7 +46,7 @@ export default function Payroll({ data, reload }: { data: StaffData; reload: () 
         <div>
           <div className="eyebrow">Time & payroll</div>
           <h2>Hours and estimated labor</h2>
-          <p>Overtime at 1.5× after {OT_AFTER_H} h/week. Estimates only — payroll export is not final.</p>
+          <p>Overtime at 1.5× after {OT_AFTER_H} h/week. Estimates only — payroll export is not final. Approving time requires 2FA.</p>
         </div>
       </div>
       {err && <div className="err" role="alert">{err}</div>}
@@ -97,6 +97,7 @@ export default function Payroll({ data, reload }: { data: StaffData; reload: () 
           </table>
         </div>
       </div>
+      {StepUpModal}
     </div>
   );
 }

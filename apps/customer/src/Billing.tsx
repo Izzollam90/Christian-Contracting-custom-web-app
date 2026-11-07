@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Pill, usd, fmtShort } from '@herkey/shared';
+import { Pill, usd, fmtShort, useAal2, useStepUp } from '@herkey/shared';
 import type { Estimate, Invoice, Job } from '@herkey/shared';
 import { useCustomerData } from './useCustomerData';
 import { respondEstimate, docTotal, linesTotal } from './data';
 
-type Go = (r: 'home' | 'request' | 'jobs' | 'billing') => void;
+type Go = (r: 'home' | 'request' | 'jobs' | 'billing' | 'security' | 'privacy') => void;
 
 function Doc({ doc, kind, lines, job, onChanged }: {
   doc: Estimate | Invoice;
@@ -14,10 +14,18 @@ function Doc({ doc, kind, lines, job, onChanged }: {
   onChanged: () => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const { aal2, refresh: refreshAal2 } = useAal2();
+  const { requireStepUp, StepUpModal } = useStepUp(aal2, refreshAal2);
+
   const respond = async (accept: boolean) => {
     setBusy(true);
-    try { await respondEstimate(doc.id, accept); onChanged(); }
-    catch { /* RLS error surfaced by reload */ }
+    try {
+      if (accept) {
+        await requireStepUp(async () => { await respondEstimate(doc.id, true); onChanged(); });
+      } else {
+        await respondEstimate(doc.id, false); onChanged();
+      }
+    } catch { /* RLS error surfaced by reload */ }
     finally { setBusy(false); }
   };
   return (
@@ -57,6 +65,7 @@ function Doc({ doc, kind, lines, job, onChanged }: {
           <span className="muted" style={{ fontSize: '.85rem' }}>Pay by check or call the office for now.</span>
         </div>
       )}
+      {StepUpModal}
     </div>
   );
 }

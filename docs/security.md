@@ -13,8 +13,9 @@ everything private is protected by Postgres row-level security (RLS) and securit
   exposes street name (house number stripped by trigger) and no customer name/phone/address.
   Crew cannot read invoices at all, or other crew members' time/expenses.
 - **Role changes**: a trigger blocks any non-Admin from changing `role`, `hourly_rate_cents`,
-  `active` or `customer_id` on any profile — nobody can promote themselves. Admin-only contexts
-  (service role / SQL editor, where `auth.uid()` is null) are allowed.
+  `active` or `customer_id` on any profile — nobody can promote themselves. When a signed-in
+  Admin changes these, the trigger also requires `is_aal2()` (a verified 2FA session).
+  Admin-only contexts (service role / SQL editor, where `auth.uid()` is null) are allowed.
 - **Atomic claim**: `claim_job` does a conditional `UPDATE ... WHERE crew_id IS NULL` — two
   simultaneous claims cannot both succeed (proven by a 12-round two-session race test).
 - **All state changes go through RPCs** (`claim_job`, `set_job_status`, `cancel_my_job`,
@@ -31,18 +32,28 @@ everything private is protected by Postgres row-level security (RLS) and securit
 
 `supabase/tests/run-local.mjs` boots a real Postgres (embedded), stubs only the Supabase auth
 primitives, applies the migration + seed, and runs `supabase/tests/rls_checks.sql`:
-31 assertions covering cross-customer reads, crew privacy (job board, time, expenses, invoices),
-self-role-escalation, double claims, cancel/answer permissions, invoice permissions, and time
-review — plus the two-session claim race. Run it with `pnpm test:db`.
+32 assertions covering cross-customer reads, crew privacy (job board, time, expenses, invoices),
+self-role-escalation, double claims, cancel/answer permissions, invoice permissions, time
+review, and 11 MFA checks (every money/access action fails at aal1 and passes at aal2)
+— plus the two-session claim race. Run it with `pnpm test:db`.
 
 ## Auth
 
-- Sign-in methods: **Google, Apple, Facebook, X, passkey (WebAuthn), email+password, magic link**.
-  Enable each provider in Supabase → Authentication → Providers (Apple and passkeys require a real
-  HTTPS domain, not localhost).
+- Sign-in methods: **Google** and **passkey (WebAuthn)** only.
+  Apple, Facebook, X, password, and magic link were removed (owner decision, Nov 6).
+  Enable Google in Supabase → Authentication → Providers. Enable passkeys and MFA (TOTP) in
+  Supabase → Authentication → Settings.
+- **Two-factor authentication (TOTP)**: Admin and Finance must set up 2FA before they can open
+  any screen; all other roles need it at the moment of a money or access action (step-up). The
+  database enforces this: `is_aal2()` checks `auth.jwt() ->> 'aal' = 'aal2'` and is required in
+  `respond_estimate` (accept path), `invoice_from_estimate`, invoice/expense/time update policies,
+  the profile guard trigger, customer address updates, and settings writes.
+  See `supabase/migrations/0002_mfa_and_signin.sql`.
+- An Admin can reset another user's MFA factors via `admin_reset_mfa(target_uuid)` — Admin-only,
+  aal2 required, cannot reset own factors.
 - OAuth uses the **PKCE** flow (`flowType: 'pkce'`); sessions persist in storage and auto-refresh.
 - Redirect URLs are allow-listed in the Supabase dashboard (localhost for dev + the two production
-  URLs). Configure a **minimum password length** in Supabase → Auth → Policies.
+  URLs).
 - New sign-ups default to `Customer` via the `handle_new_user` trigger; staff roles are assigned by
   an Admin (Team & access). Staff invites go out as an email OTP; the Admin then sets the role.
 - The **service role key never ships to the browser**; it is used only by `scripts/seed-users.ts`
@@ -61,11 +72,10 @@ review — plus the two-session claim race. Run it with `pnpm test:db`.
 
 ## Operational checklist for the owner (Supabase dashboard)
 
-1. Enable the providers you want and paste their client IDs/secrets.
+1. Enable **Google** in Authentication → Providers and paste the client ID/secret from Google Cloud Console.
 2. Add production URLs to the Auth redirect allow-list (dev: `http://localhost:5173`,
    `http://localhost:5174`).
-3. Set password policy (**min length 12** — the frontend validates 12 too) and keep email
-   confirmations on.
+3. Enable **MFA (TOTP)** in Authentication → Settings so users can enroll authenticator-app factors.
 4. **Passkeys (WebAuthn):** Authentication → Passkeys — enable, display name "Herkey
    Maintenance", dev RP ID `localhost`, allowed origins `http://localhost:5173` and
    `http://localhost:5174`. In production use the real domain + HTTPS origins. Passkeys are
