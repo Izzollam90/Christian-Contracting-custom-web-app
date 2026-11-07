@@ -1,21 +1,11 @@
 import { supabase } from './supabase';
 
-// All sign-in methods supported by Supabase Auth. Providers (Google, Apple, Facebook, X)
-// must be enabled in the Supabase dashboard with their client IDs/secrets.
-export type OAuthProvider = 'google' | 'apple' | 'facebook' | 'twitter';
-
-export const signInWithOAuth = async (provider: OAuthProvider): Promise<void> => {
+// Sign-in methods per latest owner instruction: Google + email/password only.
+// (Apple, Facebook, X, passkey and magic link removed on the product branch.)
+export const signInWithGoogle = async (): Promise<void> => {
   const { error } = await supabase().auth.signInWithOAuth({
-    provider,
+    provider: 'google',
     options: { redirectTo: window.location.origin },
-  });
-  if (error) throw error;
-};
-
-export const signInWithMagicLink = async (email: string): Promise<void> => {
-  const { error } = await supabase().auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: window.location.origin },
   });
   if (error) throw error;
 };
@@ -31,18 +21,6 @@ export const signUpWithPassword = async (email: string, password: string, fullNa
     password,
     options: { data: { full_name: fullName }, emailRedirectTo: window.location.origin },
   });
-  if (error) throw error;
-};
-
-// Passkeys (WebAuthn): "sign in with a key" — Face ID, Touch ID, or a security key.
-export const signInWithPasskey = async () => {
-  const { error } = await supabase().auth.signInWithPasskey();
-  if (error) throw error;
-};
-
-// Register a passkey for the currently signed-in account (e.g. right after first sign-in).
-export const registerPasskey = async () => {
-  const { error } = await supabase().auth.registerPasskey();
   if (error) throw error;
 };
 

@@ -78,10 +78,11 @@ Rules:
 ## 9. Not in the first release
 Job photos and media, automated SMS and email, online payments, accounting and Google connections, advanced payroll, multi-business. Build none of these unless the owner moves them in.
 
-## 11. Two-factor authentication (owner, Nov 6)
+## 11. Two-factor authentication (owner, Nov 6; amended same day: SMS allowed, passkeys/email-OTP excluded; sign-in is Google + email/password only — supersedes the earlier "Google and passkey only" note in HANDOFF)
 Goal: nobody can move money or change who has access with just a stolen sign-in.
 
-- **Method:** authenticator-app codes (TOTP: Google Authenticator, Microsoft Authenticator, 1Password, etc.) using Supabase Auth MFA. Allow at least two factors per person so a lost phone isn't a lockout.
+- **Method:** authenticator-app codes (TOTP) **or SMS text** (Supabase Auth MFA phone factor), via Supabase Auth MFA. **No passkeys, no email-OTP.** Allow at least two factors per person so a lost phone isn't a lockout.
+- **Sign-in methods:** Google OAuth and email+password only. (Apple, Facebook, X, magic link and passkeys are removed on the product branch.)
 - **Who must use it:**
   | Role | 2FA |
   |---|---|

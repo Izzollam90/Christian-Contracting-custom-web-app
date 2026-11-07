@@ -2,23 +2,25 @@ import { useState } from 'react';
 import { Pill, usd, fmtDT, fmtShort } from '@herkey/shared';
 import type { StaffData } from '../data';
 import { reviewExpense, reviewTime } from '../data';
+import { useStepUp } from '@herkey/shared';
 
 export default function Approvals({ data, reload }: { data: StaffData; reload: () => Promise<void> }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const step = useStepUp();
   const pendingExpenses = data.expenses.filter((e) => e.status === 'Submitted');
   const flaggedTime = data.time.filter((t) => t.review === 'Needs Review');
   const submitter = (id: string) => data.profiles.find((p) => p.id === id);
 
   const doExpense = async (id: number, status: 'Approved' | 'Rejected') => {
     setBusy(true); setErr('');
-    try { await reviewExpense(id, status); await reload(); }
+    try { await step.run(async () => { await reviewExpense(id, status); await reload(); }); }
     catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
     finally { setBusy(false); }
   };
   const doTime = async (id: number, review: 'Approved' | 'Rejected') => {
     setBusy(true); setErr('');
-    try { await reviewTime(id, review); await reload(); }
+    try { await step.run(async () => { await reviewTime(id, review); await reload(); }); }
     catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
     finally { setBusy(false); }
   };
@@ -33,6 +35,7 @@ export default function Approvals({ data, reload }: { data: StaffData; reload: (
         </div>
       </div>
       {err && <div className="err" role="alert">{err}</div>}
+      {step.challenge && <div className="scrim"><div className="drawer" style={{ margin: "auto" }}>{step.challenge}</div></div>}
 
       <div className="glass pad stack">
         <h3>Expenses awaiting review {pendingExpenses.length > 0 && <span className="badge-count">{pendingExpenses.length}</span>}</h3>

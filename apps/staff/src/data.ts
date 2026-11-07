@@ -50,12 +50,10 @@ export const clockOut = (entryId: number) =>
   supabase().from('time_entries').update({ clock_out: new Date().toISOString() }).eq('id', entryId);
 
 export const reviewTime = (entryId: number, review: 'Approved' | 'Rejected') =>
-  supabase().from('time_entries').update({ review }).eq('id', entryId);
+  supabase().rpc('review_time_entry', { p_entry: entryId, p_review: review });
 
-export const reviewExpense = async (expenseId: number, status: 'Approved' | 'Rejected') => {
-  const { data: s } = await supabase().auth.getSession();
-  return supabase().from('expenses').update({ status, reviewed_by: s.session?.user.id ?? null }).eq('id', expenseId);
-};
+export const reviewExpense = (expenseId: number, status: 'Approved' | 'Rejected') =>
+  supabase().rpc('review_expense', { p_expense: expenseId, p_status: status });
 
 export const submitExpense = (p: { jobId: string | null; category: string; vendor: string; amountCents: number; note: string }) =>
   supabase().from('expenses').insert({
@@ -69,7 +67,7 @@ export const addActivity = async (jobId: string, action: string, visible = true)
 };
 
 export const setProfileRole = (profileId: string, role: string) =>
-  supabase().from('profiles').update({ role: role as Profile['role'] }).eq('id', profileId);
+  supabase().rpc('set_profile_role', { p_profile: profileId, p_role: role });
 
 export const inviteStaff = async (email: string) => {
   // Supabase admin invite is not available to the anon key; use the auth invite endpoint via RPC-free flow:

@@ -5,14 +5,14 @@
 -- The two-simultaneous-claims race is proven separately by run-local.mjs (needs two sessions).
 
 -- ============ helpers ============
-create or replace function test_as(p_email text) returns void language plpgsql as $$
+create or replace function test_as(p_email text, p_aal text default 'aal1') returns void language plpgsql as $$
 declare v_id uuid;
 begin
   select id into v_id from profiles where email = p_email;
   if v_id is null then raise exception 'test user % not found', p_email; end if;
   execute 'reset role';
   execute 'set role authenticated';
-  execute format('set request.jwt.claims = %L', json_build_object('sub', v_id)::text);
+  execute format('set request.jwt.claims = %L', json_build_object('sub', v_id, 'aal', p_aal)::text);
 end $$;
 
 create or replace function test_reset() returns void language plpgsql as $$
@@ -137,7 +137,7 @@ begin
   -- restore for later checks
   perform test_reset();
   update jobs set status = 'Requested', completed_at = null where id = 'J-1046';
-  perform test_as('dana.whitfield@example.com');
+  perform test_as('dana.whitfield@example.com', 'aal2');    -- estimate response requires 2FA
   perform respond_estimate('EST-2053', true);               -- Sent, her job J-1046
   raise notice 'PASS: customer can accept own sent estimate';
   perform test_reset();
@@ -165,7 +165,7 @@ begin
   if threw then raise notice 'PASS: crew cannot create invoices';
   else raise notice 'FAIL: crew created an invoice'; end if;
   perform test_reset();
-  perform test_as('pat.kim@example.com');                   -- Finance
+  perform test_as('pat.kim@example.com', 'aal2');           -- Finance, 2FA verified
   perform invoice_from_estimate('EST-2049');
   select count(*) into n from invoices where estimate_id = 'EST-2049';
   if n <> 1 then raise notice 'FAIL: invoice not created from accepted estimate'; else raise notice 'PASS: Finance created invoice from accepted estimate'; end if;
@@ -184,10 +184,53 @@ begin
   if n <> 0 then raise notice 'FAIL: crew approved own flagged time (% rows)', n;
   else raise notice 'PASS: crew cannot approve own flagged time'; end if;
   perform test_reset();
-  perform test_as('renee.carter@example.com');               -- CrewLead
+  perform test_as('renee.carter@example.com', 'aal2');       -- CrewLead, 2FA verified
   update time_entries set review = 'Rejected' where review = 'Needs Review';
   get diagnostics n = row_count;
   if n <> 1 then raise notice 'FAIL: CrewLead review affected % rows', n;
   else raise notice 'PASS: CrewLead can review flagged time'; end if;
+  perform test_reset();
+end $$;
+
+-- ============ 8. two-factor (aal2) is required for money and access actions ============
+do $$
+declare threw boolean; n int;
+begin
+  -- aal1 session: every money/access action must fail
+  perform test_as('dana.whitfield@example.com');             -- aal1
+  threw := false;
+  begin perform respond_estimate('EST-2053', true); exception when others then threw := true; end;
+  if threw then raise notice 'PASS: estimate response blocked at aal1'; else raise notice 'FAIL: estimate response allowed at aal1'; end if;
+  perform test_reset();
+  perform test_as('pat.kim@example.com');                    -- Finance, aal1
+  threw := false;
+  begin perform invoice_from_estimate('EST-2049'); exception when others then threw := true; end;
+  if threw then raise notice 'PASS: invoice creation blocked at aal1'; else raise notice 'FAIL: invoice creation allowed at aal1'; end if;
+  perform test_reset();
+  perform test_as('renee.carter@example.com');               -- CrewLead, aal1
+  update expenses set status = 'Approved' where status = 'Submitted';
+  get diagnostics n = row_count;
+  if n <> 0 then raise notice 'FAIL: expense approval allowed at aal1 (% rows)', n;
+  else raise notice 'PASS: expense approval blocked at aal1 (direct update)'; end if;
+  threw := false;
+  begin perform review_expense((select id from expenses where status = 'Submitted' limit 1), 'Approved'); exception when others then threw := true; end;
+  if threw then raise notice 'PASS: expense review RPC blocked at aal1'; else raise notice 'FAIL: expense review RPC allowed at aal1'; end if;
+  threw := false;
+  begin perform review_time_entry((select id from time_entries where review = 'Needs Review' limit 1), 'Approved'); exception when others then threw := true; end;
+  if threw then raise notice 'PASS: time review RPC blocked at aal1'; else raise notice 'FAIL: time review RPC allowed at aal1'; end if;
+  perform test_reset();
+  perform test_as('owner@example.com');                      -- Admin, aal1
+  threw := false;
+  begin perform set_profile_role((select id from profiles where email = 'marcus.lee@example.com'), 'CrewLead'); exception when others then threw := true; end;
+  if threw then raise notice 'PASS: role change blocked at aal1'; else raise notice 'FAIL: role change allowed at aal1'; end if;
+  perform test_reset();
+  -- aal2 session: the same actions succeed
+  perform test_as('renee.carter@example.com', 'aal2');
+  perform review_expense((select id from expenses where status = 'Submitted' limit 1), 'Approved');
+  raise notice 'PASS: expense review RPC works at aal2';
+  perform test_reset();
+  perform test_as('owner@example.com', 'aal2');
+  perform set_profile_role((select id from profiles where email = 'marcus.lee@example.com'), 'Crew');
+  raise notice 'PASS: role change works at aal2 (restored to Crew)';
   perform test_reset();
 end $$;

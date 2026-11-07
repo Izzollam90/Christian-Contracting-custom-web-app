@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useAuth, LiquidBackground, Icon, initials, COMPANY_NAME, signOut, SignIn, PasskeyButton } from '@herkey/shared';
+import { useAuth, useMfa, LiquidBackground, Icon, initials, COMPANY_NAME, signOut, SignIn, MfaChallenge, TwoFactorSettings } from '@herkey/shared';
 import Home from './Home';
 import Request from './Request';
 import JobsPage from './Jobs';
@@ -22,7 +22,10 @@ const routeFromHash = (): Route => {
 
 export default function App() {
   const { session, profile, loading } = useAuth();
+  const mfa = useMfa();
   const [route, setRoute] = useState<Route>(routeFromHash);
+  const [show2fa, setShow2fa] = useState(false);
+  const needsMfa = !!profile && ['Admin', 'Finance'].includes(profile.role) && mfa?.aal !== 'aal2';
 
   useEffect(() => {
     const onHash = () => setRoute(routeFromHash());
@@ -40,6 +43,11 @@ export default function App() {
   }
   if (!session || !profile) {
     return <><LiquidBackground /><SignIn subtitle="Customer portal" /></>;
+  }
+  if (needsMfa) {
+    return <div className="app"><LiquidBackground /><main className="wrap" style={{ paddingBlock: '14vh' }}>
+      <div style={{ display: 'flex', justifyContent: 'center' }}><MfaChallenge /></div>
+    </main></div>;
   }
 
   const pages: Record<Route, (p: { go: Go }) => JSX.Element> = {
@@ -67,12 +75,15 @@ export default function App() {
           <div className="me" title={profile.email}>
             <i>{initials(profile.full_name ?? profile.email)}</i>
             <span>{profile.full_name ?? profile.email}</span>
-            <PasskeyButton />
+            <button className="btn ghost sm" onClick={() => setShow2fa((v) => !v)} title="Two-factor authentication"><Icon name="lock" size={16} /> 2FA</button>
             <button className="btn ghost sm" onClick={() => void signOut()} aria-label="Sign out"><Icon name="logout" size={16} /></button>
           </div>
         </div>
       </header>
       <main><Page key={route} go={go as Go} /></main>
+      {show2fa && <div className="scrim" onClick={(e) => { if (e.target === e.currentTarget) setShow2fa(false); }}>
+        <div className="drawer" style={{ width: 'min(480px,100%)' }}><TwoFactorSettings /><div className="row"><button className="btn sm" onClick={() => setShow2fa(false)}>Close</button></div></div>
+      </div>}
       <footer>
         <div className="wrap">
           <span>{COMPANY_NAME} · Repairs, upkeep and property care</span>

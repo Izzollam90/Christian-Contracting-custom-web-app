@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  useAuth, LiquidBackground, Icon, isStaffRole, ROLE_LABEL, COMPANY_NAME, signOut, SignIn, Spinner, PasskeyButton,
+  useAuth, useMfa, LiquidBackground, Icon, isStaffRole, ROLE_LABEL, COMPANY_NAME, signOut, SignIn, Spinner, MfaChallenge, TwoFactorSettings,
 } from '@herkey/shared';
 import type { AppRole } from '@herkey/shared';
 import { useStaffData } from './useStaffData';
@@ -35,7 +35,10 @@ const ROLE_DESC: Record<AppRole, string> = {
 
 export default function App() {
   const { session, profile, loading } = useAuth();
+  const mfa = useMfa();
   const [view, setView] = useState<string>('overview');
+  const [show2fa, setShow2fa] = useState(false);
+  const needsMfa = !!profile && ['Admin', 'Finance'].includes(profile.role) && mfa?.aal !== 'aal2';
 
   useEffect(() => {
     if (profile && isStaffRole(profile.role)) {
@@ -49,6 +52,11 @@ export default function App() {
   }
   if (!session || !profile) {
     return <><LiquidBackground /><SignIn subtitle="Crew & office" /></>;
+  }
+  if (needsMfa) {
+    return <div className="app"><LiquidBackground /><main className="wrap" style={{ paddingBlock: '14vh' }}>
+      <div style={{ display: 'flex', justifyContent: 'center' }}><MfaChallenge /></div>
+    </main></div>;
   }
   if (!isStaffRole(profile.role)) {
     return (
@@ -65,11 +73,12 @@ export default function App() {
     );
   }
 
-  return <StaffShell profileRole={profile.role} profileName={profile.full_name ?? profile.email} view={view} setView={setView} />;
+  return <StaffShell profileRole={profile.role} profileName={profile.full_name ?? profile.email} view={view} setView={setView} show2fa={show2fa} setShow2fa={setShow2fa} />;
 }
 
-function StaffShell({ profileRole, profileName, view, setView }: {
+function StaffShell({ profileRole, profileName, view, setView, show2fa, setShow2fa }: {
   profileRole: AppRole; profileName: string; view: string; setView: (v: string) => void;
+  show2fa: boolean; setShow2fa: (v: boolean) => void;
 }) {
   const { data, loading, reload } = useStaffData();
   const nav = NAV[profileRole] ?? NAV.Crew!;
@@ -114,7 +123,9 @@ function StaffShell({ profileRole, profileName, view, setView }: {
               {counts[k as keyof typeof counts] ? <span className="ct">{counts[k as keyof typeof counts]}</span> : null}
             </button>
           ))}
-          <div style={{ marginTop: 'auto', padding: '6px 10px' }}><PasskeyButton /></div>
+          <button type="button" className="nb" style={{ marginTop: 'auto' }} onClick={() => setShow2fa(true)}>
+            <Icon name="lock" size={20} /><span className="l">Two-factor auth</span>
+          </button>
           <button type="button" className="nb" onClick={() => void signOut()}>
             <Icon name="logout" size={20} /><span className="l">Sign out</span>
           </button>
@@ -128,6 +139,9 @@ function StaffShell({ profileRole, profileName, view, setView }: {
           {loading ? <Spinner /> : <Page data={data} reload={reload} />}
         </main>
       </div>
+      {show2fa && <div className="scrim" onClick={(e) => { if (e.target === e.currentTarget) setShow2fa(false); }}>
+        <div className="drawer" style={{ width: 'min(480px,100%)' }}><TwoFactorSettings /><div className="row"><button className="btn sm" onClick={() => setShow2fa(false)}>Close</button></div></div>
+      </div>}
     </div>
   );
 }

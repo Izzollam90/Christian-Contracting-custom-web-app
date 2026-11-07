@@ -18,3 +18,5 @@ Record each choice not already in HANDOFF.md: date, decision, why, and who decid
 | 2026-11-06 | **Two-factor (TOTP) required** for Admin/Finance always; step-up 2FA for money and access actions for everyone, enforced in the DB via `aal2` (requirements §11) | Owner: "so people can't just send money" | Owner |
 | 2026-11-06 | **Web app first**; app-store builds later as a separate project. Confirms D1 (c): websites are the live system | Owner request | Owner |
 | 2026-11-06 | D4/D5/D6 defaults adopted: preferred time confirmed by office; no completion approval; 200 m geofence, 1.5× after 40 h/wk | HANDOFF §3 defaults | Agent |
+| 2026-11-06 | Product branch sign-in: Google + email/password only; 2FA via TOTP or SMS (no passkey, no email OTP); PWA kept for now | Owner latest instruction, supersedes Google+passkey-only note | Owner |
+| 2026-11-06 | 2FA enforced in DB: aal2 required for money/access RPCs and review policies (migration 0002), tested aal1-fails/aal2-passes | requirements §11 | Agent |

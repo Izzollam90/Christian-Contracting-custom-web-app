@@ -2,19 +2,21 @@ import { useState } from 'react';
 import { Pill, usd, fmtDT, fmtShort, useAuth } from '@herkey/shared';
 import type { StaffData } from '../data';
 import { invoiceFromEstimate, docTotal } from '../data';
+import { useStepUp } from '@herkey/shared';
 
 export default function Billing({ data, reload }: { data: StaffData; reload: () => Promise<void> }) {
   const { profile } = useAuth();
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState('');
   const [msg, setMsg] = useState('');
+  const step = useStepUp();
   const canInvoice = profile?.role === 'Finance' || profile?.role === 'Admin';
   const jobOf = (id: string) => data.jobs.find((j) => j.id === id);
   const custOf = (j: { customer_id: string }) => data.customers.find((c) => c.id === j.customer_id);
 
   const makeInvoice = async (estimateId: string) => {
     setBusy(estimateId); setErr(''); setMsg('');
-    try { await invoiceFromEstimate(estimateId); setMsg(`Invoice drafted from ${estimateId}.`); await reload(); }
+    try { await step.run(async () => { await invoiceFromEstimate(estimateId); setMsg(`Invoice drafted from ${estimateId}.`); await reload(); }); }
     catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
     finally { setBusy(null); }
   };
