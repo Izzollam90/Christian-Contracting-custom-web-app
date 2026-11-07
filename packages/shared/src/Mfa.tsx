@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, type ReactNode } from 'react';
+import { friendlyError } from './errors';
 import {
   supabase, isAal2, enrollMfaFactor, createMfaChallenge, verifyMfaChallenge,
   unenrollMfaFactor, listMfaFactors, registerPasskey, Icon,
@@ -43,7 +44,7 @@ export function StepUpPrompt({ onClose, onVerified }: { onClose: () => void; onV
         setFactorId(fid);
         const ch = await createMfaChallenge(fid);
         setChallengeId(ch.id);
-      } catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+      } catch (e) { setErr(friendlyError(e)); }
       finally { setLoadingFactors(false); }
     })();
   }, []);
@@ -53,7 +54,7 @@ export function StepUpPrompt({ onClose, onVerified }: { onClose: () => void; onV
     try {
       await verifyMfaChallenge(factorId, challengeId, code);
       onVerified();
-    } catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    } catch (e) { setErr(friendlyError(e)); }
     finally { setBusy(false); }
   };
 
@@ -122,7 +123,7 @@ export function MfaEnrollCard({ onDone }: { onDone: () => void }) {
         setFactorId(data.id);
         setStep('qr');
       }
-    } catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    } catch (e) { setErr(friendlyError(e)); }
     finally { setBusy(false); }
   };
 
@@ -132,7 +133,7 @@ export function MfaEnrollCard({ onDone }: { onDone: () => void }) {
       const ch = await createMfaChallenge(factorId);
       await verifyMfaChallenge(factorId, ch.id, code);
       setStep('done');
-    } catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    } catch (e) { setErr(friendlyError(e)); }
     finally { setBusy(false); }
   };
 
@@ -189,27 +190,35 @@ export function SecurityPage({ aal2, refreshAal2 }: { aal2: boolean; refreshAal2
   const [showEnroll, setShowEnroll] = useState(false);
   const [err, setErr] = useState('');
   const [passkeyMsg, setPasskeyMsg] = useState('');
+  const { requireStepUp, StepUpModal } = useStepUp(aal2, refreshAal2);
 
   const load = async () => {
     try {
       const data = await listMfaFactors();
       setFactors(data.totp.map((f) => ({ id: f.id, friendly_name: f.friendly_name ?? null, status: f.status })));
-    } catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    } catch (e) { setErr(friendlyError(e)); }
     finally { setLoading(false); }
   };
 
   useEffect(() => { void load(); }, []);
 
+  // Removing a factor is an access action: require a verified 2FA session first, so a
+  // stolen aal1 session cannot strip the account's second factor.
   const removeFactor = async (id: string) => {
     setErr('');
-    try { await unenrollMfaFactor(id); await load(); }
-    catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    try {
+      await requireStepUp(async () => {
+        await unenrollMfaFactor(id);
+        await load();
+        await refreshAal2();
+      });
+    } catch (e) { setErr(friendlyError(e)); }
   };
 
   const addPasskey = async () => {
     setPasskeyMsg(''); setErr('');
     try { await registerPasskey(); setPasskeyMsg('Passkey added.'); }
-    catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    catch (e) { setErr(friendlyError(e)); }
   };
 
   return (
@@ -222,6 +231,7 @@ export function SecurityPage({ aal2, refreshAal2 }: { aal2: boolean; refreshAal2
         </div>
       </div>
       {err && <div className="err" role="alert">{err}</div>}
+      {StepUpModal}
 
       <div className="glass pad stack">
         <div className="row" style={{ justifyContent: 'space-between' }}>
@@ -276,7 +286,7 @@ export function PasskeyNudge({ onDismiss }: { onDismiss: () => void }) {
   const add = async () => {
     setBusy(true); setErr('');
     try { await registerPasskey(); setDone(true); }
-    catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    catch (e) { setErr(friendlyError(e)); }
     finally { setBusy(false); }
   };
 

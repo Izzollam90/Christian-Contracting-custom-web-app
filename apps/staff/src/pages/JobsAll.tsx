@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { friendlyError } from '@herkey/shared';
 import { Pill, Icon, categoryIcon, fmtDay, fmtDT, ALL_STATUSES, useAuth } from '@herkey/shared';
 import type { StaffData } from '../data';
 import { setJobStatus, addActivity } from '../data';
@@ -33,7 +34,7 @@ export default function JobsAll({ data, reload }: { data: StaffData; reload: () 
       await setJobStatus(job.id, status as never, note || undefined);
       if (note) { await addActivity(job.id, `Note: ${note}`); setNote(''); }
       await reload();
-    } catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    } catch (e) { setErr(friendlyError(e)); }
     finally { setBusy(false); }
   };
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { friendlyError } from '@herkey/shared';
 import { Pill, Icon, categoryIcon, fmtDay } from '@herkey/shared';
 import type { StaffData } from '../data';
 import { claimJob } from '../data';
@@ -15,7 +16,7 @@ export default function Board({ data, reload }: { data: StaffData; reload: () =>
   const claim = async (jobId: string) => {
     setBusy(jobId); setErr('');
     try { await claimJob(jobId); await reload(); }
-    catch (e) { setErr(e instanceof Error ? e.message : String(e)); await reload(); }
+    catch (e) { setErr(friendlyError(e)); await reload(); }
     finally { setBusy(null); }
   };
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { friendlyError } from '@herkey/shared';
 import {
   GEOFENCE_METERS, Pill, checkGeofence, hoursBetween, fmtDT, fmtTime, Icon,
 } from '@herkey/shared';
@@ -28,7 +29,7 @@ export default function Today({ data, reload }: { data: StaffData; reload: () =>
           ? `Clocked in ${geo.distanceMeters} m from the site — outside the ${GEOFENCE_METERS} m geofence, flagged Needs Review.`
           : 'Clocked in. Location not checked (permission denied or no site pin).');
       await reload();
-    } catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    } catch (e) { setErr(friendlyError(e)); }
     finally { setBusy(false); }
   };
 
@@ -36,7 +37,7 @@ export default function Today({ data, reload }: { data: StaffData; reload: () =>
     if (!openShift) return;
     setBusy(true); setErr('');
     try { await clockOut(openShift.id); await reload(); }
-    catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    catch (e) { setErr(friendlyError(e)); }
     finally { setBusy(false); }
   };
 

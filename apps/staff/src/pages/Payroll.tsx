@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { friendlyError } from '@herkey/shared';
 import { Pill, usd, fmtDT, hoursBetween, useStepUp } from '@herkey/shared';
 import type { StaffData } from '../data';
 import { reviewTime } from '../data';
@@ -36,7 +37,7 @@ export default function Payroll({ data, reload, aal2, refreshAal2 }: { data: Sta
   const doReview = async (id: number, review: 'Approved' | 'Rejected') => {
     setBusy(true); setErr('');
     try { await requireStepUp(async () => { await reviewTime(id, review); await reload(); }); }
-    catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    catch (e) { setErr(friendlyError(e)); }
     finally { setBusy(false); }
   };
 

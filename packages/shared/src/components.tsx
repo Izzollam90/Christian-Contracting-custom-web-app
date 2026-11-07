@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { friendlyError } from './errors';
 import { STAGES, statusPillClass } from './constants';
 import type { JobStatus } from './types';
 import { Icon } from './icons';
@@ -113,7 +114,7 @@ export function PasskeyButton() {
       const { registerPasskey } = await import('./auth');
       await registerPasskey();
       setState('done');
-    } catch (e) { setErr(e instanceof Error ? e.message : String(e)); setState('idle'); }
+    } catch (e) { setErr(friendlyError(e)); setState('idle'); }
   };
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>

@@ -11,3 +11,4 @@ export * from './components';
 export * from './icons';
 export * from './SignIn';
 export * from './Mfa';
+export * from './errors';

@@ -37,6 +37,47 @@ self-role-escalation, double claims, cancel/answer permissions, invoice permissi
 review, and 11 MFA checks (every money/access action fails at aal1 and passes at aal2)
 — plus the two-session claim race. Run it with `pnpm test:db`.
 
+> Note: `run-local.mjs` applies `0001_init.sql` and `0002_mfa_and_signin.sql` only. The
+> hardening migrations below (`0003`–`0013`) are applied to the hosted project through the
+> Supabase migration tool and are not represented in the local harness, so the assertion
+> "Finance can read invoices at aal1" in `rls_checks.sql` now describes the pre-hardening
+> schema. In the hosted database, office reads of `invoices` require aal2.
+
+## Hardening pass (security audit)
+
+Applied as migrations `0003`–`0013`:
+
+- `guard_profile_update()` compared `new.hourly_rate_cents` against itself in the non-Admin
+  branch, so any signed-in user could raise their own pay rate. Fixed to compare `old.`.
+- New `guard_time_entry_update()` trigger: only a CrewLead/Finance/Admin at aal2 may change
+  `review`, only those roles may change `clock_in`, and `user_id` can never be reassigned.
+  Previously `te_clock_out` let the owner of an open entry write any column of that row.
+- `job_board` is a security-definer view and was auto-updatable with Supabase's default
+  INSERT/UPDATE/DELETE grants, routing writes to `jobs` without applying `jobs` RLS.
+  Now `SELECT` to `authenticated` only; all privileges revoked from `anon`.
+  The view intentionally stays owner-rights (crew must see jobs they do not own yet).
+- `is_aal2()` added to `inv_office_select`, `inv_office_insert`, `inv_office_delete` and the
+  `invoice_lines` office policies. Customers keep their own un-gated read.
+- `est_staff_write` replaced with per-verb policies; setting an estimate to `Accepted`
+  now requires aal2 on the table as well as in `respond_estimate`.
+- `handle_new_user()` links a new account to an existing customer record only when the
+  address is confirmed (`email_confirmed_at is not null`), and resolves deterministically.
+- Unique index on `lower(email)` for `customers`, matching the lookup the trigger uses.
+- `settings` reads restricted to `is_staff()` — the two `using (true)` policies published
+  business configuration and the MFA-reset audit rows (which carry email addresses).
+- `EXECUTE` revoked from `anon` (and from `PUBLIC` where the default grant survived) on
+  every SECURITY DEFINER function; trigger functions are off the API entirely.
+- `search_path = public` pinned on `set_street_name`, `is_staff`, `has_role`, `is_aal2`,
+  `guard_profile_update`, `guard_time_entry_update`.
+
+In the apps: raw database error text is no longer rendered (`friendlyError()` in
+`packages/shared/src/errors.ts` passes the app's own messages through and replaces
+everything else); removing a 2FA factor now requires a step-up code; and the staff
+email-invite flow, which created accounts from a typed-in address, was removed.
+
+Still required from the owner: disable the email / magic-link provider in
+Supabase → Authentication → Providers, leaving only Google and passkeys.
+
 ## Auth
 
 - Sign-in methods: **Google** and **passkey (WebAuthn)** only.

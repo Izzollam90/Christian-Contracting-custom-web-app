@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { friendlyError } from './errors';
 import { signInWithOAuth, signInWithPasskey, COMPANY_NAME, GoogleGlyph, Icon } from './index-internal';
 
 type Mode = 'oauth' | 'passkey';
@@ -11,7 +12,7 @@ export function SignIn({ subtitle }: { subtitle: string }) {
   const run = async (fn: () => Promise<void>) => {
     setBusy(true); setErr(null);
     try { await fn(); }
-    catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    catch (e) { setErr(friendlyError(e)); }
     finally { setBusy(false); }
   };
 

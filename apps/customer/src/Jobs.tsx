@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { friendlyError } from '@herkey/shared';
 import {
   STAGES, Pill, Tracker, Icon, categoryIcon, usd, fmtDay, fmtDT, Avatar, Empty,
 } from '@herkey/shared';
@@ -26,7 +27,7 @@ function DocCard({ doc, kind, lines, job, onChanged }: {
   const respond = async (accept: boolean) => {
     setBusy(true); setErr('');
     try { await respondEstimate(doc.id, accept); onChanged(); }
-    catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    catch (e) { setErr(friendlyError(e)); }
     finally { setBusy(false); }
   };
   return (
@@ -97,7 +98,7 @@ export default function JobsPage({ go }: { go: Go }) {
     if (cancelArm !== jobId) { setCancelArm(jobId); return; }
     setCancelArm(null); setErr('');
     try { await cancelJob(jobId); await d.reload(); }
-    catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    catch (e) { setErr(friendlyError(e)); }
   };
 
   return (

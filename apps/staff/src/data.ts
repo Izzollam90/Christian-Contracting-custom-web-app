@@ -71,12 +71,10 @@ export const addActivity = async (jobId: string, action: string, visible = true)
 export const setProfileRole = (profileId: string, role: string) =>
   supabase().from('profiles').update({ role: role as Profile['role'] }).eq('id', profileId);
 
-export const inviteStaff = async (email: string) => {
-  // Supabase admin invite is not available to the anon key; use the auth invite endpoint via RPC-free flow:
-  // send an OTP invite email; on first sign-in the handle_new_user trigger creates the Customer profile
-  // and an Admin assigns the staff role from Team & access.
-  return supabase().auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
-};
+// Staff onboarding deliberately has no email-invite function. Sign-in is Google + passkey
+// only (owner decision, Nov 6), and creating an account from an address typed into a form
+// is an unverified email claim — handle_new_user links new accounts to customer records.
+// The person signs in with Google themselves; an Admin then assigns their role.
 
 export type StaffData = {
   jobs: Job[];

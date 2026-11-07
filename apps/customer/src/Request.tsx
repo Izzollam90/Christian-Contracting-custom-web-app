@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { friendlyError } from '@herkey/shared';
 import {
   PRIORITIES, Icon, categoryIcon, nextWorkdays, weekdayShort, dayNum, monthShort,
 } from '@herkey/shared';
@@ -82,7 +83,7 @@ export default function Request({ go }: { go: Go }) {
         });
         setSent(job);
       } catch (e) {
-        setErr(e instanceof Error ? e.message : String(e));
+        setErr(friendlyError(e));
       } finally { setBusy(false); }
       return;
     }

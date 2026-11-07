@@ -1,14 +1,14 @@
 import { useState } from 'react';
+import { friendlyError } from '@herkey/shared';
 import { Pill, ROLE_LABEL, useAuth, useStepUp } from '@herkey/shared';
 import type { StaffData } from '../data';
 import type { AppRole } from '@herkey/shared';
-import { setProfileRole, inviteStaff } from '../data';
+import { setProfileRole } from '../data';
 
 const STAFF_ROLES: AppRole[] = ['Customer', 'Crew', 'CrewLead', 'Finance', 'Admin'];
 
 export default function Team({ data, reload, aal2, refreshAal2 }: { data: StaffData; reload: () => Promise<void>; aal2: boolean; refreshAal2: () => Promise<void> }) {
   const { profile } = useAuth();
-  const [inviteEmail, setInviteEmail] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [msg, setMsg] = useState('');
@@ -22,17 +22,7 @@ export default function Team({ data, reload, aal2, refreshAal2 }: { data: StaffD
         setMsg(`Role updated to ${ROLE_LABEL[role]}.`);
         await reload();
       });
-    } catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
-    finally { setBusy(false); }
-  };
-
-  const invite = async () => {
-    setBusy(true); setErr(''); setMsg('');
-    try {
-      await inviteStaff(inviteEmail.trim());
-      setMsg(`Invite email sent to ${inviteEmail.trim()}. After they sign in, set their role below.`);
-      setInviteEmail('');
-    } catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    } catch (e) { setErr(friendlyError(e)); }
     finally { setBusy(false); }
   };
 
@@ -50,11 +40,11 @@ export default function Team({ data, reload, aal2, refreshAal2 }: { data: StaffD
 
       {profile?.role === 'Admin' && (
         <div className="glass pad stack">
-          <h3>Invite a staff member by email</h3>
-          <div className="inline-form">
-            <label>Email<input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="newcrew@example.com" /></label>
-            <button className="btn gold" disabled={busy || !inviteEmail} onClick={() => void invite()}>Send invite</button>
-          </div>
+          <h3>Adding a staff member</h3>
+          <p>
+            Ask the person to open the app and sign in with Google (or set up a passkey). They start
+            as a Customer. Once their name appears in the list below, change their role here.
+          </p>
         </div>
       )}
 

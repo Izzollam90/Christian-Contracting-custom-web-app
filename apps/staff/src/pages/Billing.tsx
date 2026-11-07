@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { friendlyError } from '@herkey/shared';
 import { Pill, usd, fmtDT, fmtShort, useAuth, useStepUp } from '@herkey/shared';
 import type { StaffData } from '../data';
 import { invoiceFromEstimate, docTotal } from '../data';
@@ -21,7 +22,7 @@ export default function Billing({ data, reload, aal2, refreshAal2 }: { data: Sta
         setMsg(`Invoice drafted from ${estimateId}.`);
         await reload();
       });
-    } catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    } catch (e) { setErr(friendlyError(e)); }
     finally { setBusy(null); }
   };
 

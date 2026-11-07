@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { friendlyError } from '@herkey/shared';
 import { Pill, Icon, categoryIcon, fmtDay, fmtDT, useAuth } from '@herkey/shared';
 import type { StaffData } from '../data';
 import type { JobStatus } from '@herkey/shared';
@@ -26,7 +27,7 @@ export default function MyJobs({ data, reload }: { data: StaffData; reload: () =
       await setJobStatus(j.id, status, note || undefined);
       if (note) { await addActivity(j.id, `Note: ${note}`); setNote(''); }
       await reload();
-    } catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    } catch (e) { setErr(friendlyError(e)); }
     finally { setBusy(false); }
   };
 
@@ -40,7 +41,7 @@ export default function MyJobs({ data, reload }: { data: StaffData; reload: () =
       });
       setExp({ category: 'Materials', vendor: '', amount: '', note: '' });
       await reload();
-    } catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    } catch (e) { setErr(friendlyError(e)); }
     finally { setBusy(false); }
   };
 

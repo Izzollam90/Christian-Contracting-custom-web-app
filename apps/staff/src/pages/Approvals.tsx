@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { friendlyError } from '@herkey/shared';
 import { Pill, usd, fmtDT, fmtShort, useStepUp } from '@herkey/shared';
 import type { StaffData } from '../data';
 import { reviewExpense, reviewTime } from '../data';
@@ -14,13 +15,13 @@ export default function Approvals({ data, reload, aal2, refreshAal2 }: { data: S
   const doExpense = async (id: number, status: 'Approved' | 'Rejected') => {
     setBusy(true); setErr('');
     try { await requireStepUp(async () => { await reviewExpense(id, status); await reload(); }); }
-    catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    catch (e) { setErr(friendlyError(e)); }
     finally { setBusy(false); }
   };
   const doTime = async (id: number, review: 'Approved' | 'Rejected') => {
     setBusy(true); setErr('');
     try { await requireStepUp(async () => { await reviewTime(id, review); await reload(); }); }
-    catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    catch (e) { setErr(friendlyError(e)); }
     finally { setBusy(false); }
   };
 

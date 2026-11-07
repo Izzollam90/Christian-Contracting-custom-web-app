@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { friendlyError } from '@herkey/shared';
 import { Pill, usd, fmtShort, useAuth } from '@herkey/shared';
 import type { StaffData } from '../data';
 import { submitExpense } from '../data';
@@ -24,7 +25,7 @@ export default function Expenses({ data, reload }: { data: StaffData; reload: ()
       setForm({ category: 'Materials', vendor: '', amount: '', jobId: '', note: '' });
       setMsg('Expense submitted for approval.');
       await reload();
-    } catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    } catch (e) { setErr(friendlyError(e)); }
     finally { setBusy(false); }
   };
 
