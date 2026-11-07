@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { Pill, usd, fmtDT, hoursBetween } from '@herkey/shared';
 import type { StaffData } from '../data';
 import { reviewTime } from '../data';
+import { useStepUp } from '@herkey/shared';
 
 const OT_AFTER_H = 40;
 
 export default function Payroll({ data, reload }: { data: StaffData; reload: () => Promise<void> }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const step = useStepUp();
   const user = (id: string) => data.profiles.find((p) => p.id === id);
 
   // Weekly hours per crew member (Mon–Sun weeks in company tz approximated by ISO week).
@@ -35,7 +37,7 @@ export default function Payroll({ data, reload }: { data: StaffData; reload: () 
 
   const doReview = async (id: number, review: 'Approved' | 'Rejected') => {
     setBusy(true); setErr('');
-    try { await reviewTime(id, review); await reload(); }
+    try { await step.run(async () => { await reviewTime(id, review); await reload(); }); }
     catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
     finally { setBusy(false); }
   };
@@ -50,6 +52,7 @@ export default function Payroll({ data, reload }: { data: StaffData; reload: () 
         </div>
       </div>
       {err && <div className="err" role="alert">{err}</div>}
+      {step.challenge && <div className="scrim"><div className="drawer" style={{ margin: "auto" }}>{step.challenge}</div></div>}
       <div className="glass pad stack">
         <h3>Crew hours by week (last 4 weeks)</h3>
         <div className="tablewrap">

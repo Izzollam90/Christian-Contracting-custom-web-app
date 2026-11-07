@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pill, usd, fmtShort } from '@herkey/shared';
 import type { Estimate, Invoice, Job } from '@herkey/shared';
 import { useCustomerData } from './useCustomerData';
+import { useStepUp } from '@herkey/shared';
 import { respondEstimate, docTotal, linesTotal } from './data';
 
 type Go = (r: 'home' | 'request' | 'jobs' | 'billing') => void;
@@ -14,9 +15,10 @@ function Doc({ doc, kind, lines, job, onChanged }: {
   onChanged: () => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const step = useStepUp();
   const respond = async (accept: boolean) => {
     setBusy(true);
-    try { await respondEstimate(doc.id, accept); onChanged(); }
+    try { await step.run(async () => { await respondEstimate(doc.id, accept); onChanged(); }); }
     catch { /* RLS error surfaced by reload */ }
     finally { setBusy(false); }
   };
@@ -51,6 +53,7 @@ function Doc({ doc, kind, lines, job, onChanged }: {
           <button className="btn" disabled={busy} onClick={() => void respond(false)}>Decline</button>
         </div>
       )}
+      {step.challenge}
       {kind === 'invoice' && doc.status === 'Unpaid' && (
         <div className="row">
           <button className="btn" disabled title="Online payment is coming soon">Pay online · coming soon</button>

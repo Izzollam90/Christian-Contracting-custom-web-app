@@ -4,6 +4,7 @@ import {
 } from '@herkey/shared';
 import type { Estimate, Invoice, Job } from '@herkey/shared';
 import { useCustomerData } from './useCustomerData';
+import { useStepUp } from '@herkey/shared';
 import { cancelJob, respondEstimate, linesTotal } from './data';
 
 type Go = (r: 'home' | 'request' | 'jobs' | 'billing') => void;
@@ -22,10 +23,11 @@ function DocCard({ doc, kind, lines, job, onChanged }: {
 }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const step = useStepUp();
   const total = linesTotal(lines);
   const respond = async (accept: boolean) => {
     setBusy(true); setErr('');
-    try { await respondEstimate(doc.id, accept); onChanged(); }
+    try { await step.run(async () => { await respondEstimate(doc.id, accept); onChanged(); }); }
     catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
     finally { setBusy(false); }
   };
@@ -67,6 +69,7 @@ function DocCard({ doc, kind, lines, job, onChanged }: {
         </div>
       )}
       {err && <div className="err">{err}</div>}
+      {step.challenge && <div className="scrim"><div className="drawer" style={{ margin: 'auto' }}>{step.challenge}</div></div>}
     </div>
   );
 }

@@ -102,26 +102,3 @@ export function Avatar({ name }: { name: string | null | undefined }) {
 export const Empty = ({ children }: { children: ReactNode }) => (
   <div className="glass pad empty">{children}</div>
 );
-
-// "Add a passkey to this account" — registers a WebAuthn credential for the signed-in user.
-export function PasskeyButton() {
-  const [state, setState] = useState<'idle' | 'busy' | 'done'>('idle');
-  const [err, setErr] = useState('');
-  const add = async () => {
-    setState('busy'); setErr('');
-    try {
-      const { registerPasskey } = await import('./auth');
-      await registerPasskey();
-      setState('done');
-    } catch (e) { setErr(e instanceof Error ? e.message : String(e)); setState('idle'); }
-  };
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-      <button className="btn ghost sm" title="Add a passkey (Face ID / Touch ID / security key) to this account" onClick={() => void add()}>
-        <Icon name="key" size={16} /> {state === 'done' ? 'Passkey added ✓' : 'Add passkey'}
-      </button>
-      {err && <span className="err">{err}</span>}
-    </span>
-  );
-}
-

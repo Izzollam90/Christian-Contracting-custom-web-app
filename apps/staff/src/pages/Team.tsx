@@ -3,6 +3,7 @@ import { Pill, ROLE_LABEL, useAuth } from '@herkey/shared';
 import type { StaffData } from '../data';
 import type { AppRole } from '@herkey/shared';
 import { setProfileRole, inviteStaff } from '../data';
+import { useStepUp } from '@herkey/shared';
 
 const STAFF_ROLES: AppRole[] = ['Customer', 'Crew', 'CrewLead', 'Finance', 'Admin'];
 
@@ -12,10 +13,11 @@ export default function Team({ data, reload }: { data: StaffData; reload: () => 
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [msg, setMsg] = useState('');
+  const step = useStepUp();
 
   const changeRole = async (id: string, role: AppRole) => {
     setBusy(true); setErr('');
-    try { await setProfileRole(id, role); setMsg(`Role updated to ${ROLE_LABEL[role]}.`); await reload(); }
+    try { await step.run(async () => { await setProfileRole(id, role); setMsg(`Role updated to ${ROLE_LABEL[role]}.`); await reload(); }); }
     catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
     finally { setBusy(false); }
   };
