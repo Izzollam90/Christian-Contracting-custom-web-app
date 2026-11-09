@@ -18,8 +18,15 @@ export function useAal2() {
 
   useEffect(() => {
     void refresh();
-    const { data: sub } = supabase().auth.onAuthStateChange(() => { void refresh(); });
-    return () => sub.subscription.unsubscribe();
+    let assuranceRefresh: ReturnType<typeof setTimeout>;
+    const { data: sub } = supabase().auth.onAuthStateChange(() => {
+      clearTimeout(assuranceRefresh);
+      assuranceRefresh = setTimeout(() => void refresh(), 0);
+    });
+    return () => {
+      clearTimeout(assuranceRefresh);
+      sub.subscription.unsubscribe();
+    };
   }, [refresh]);
 
   return { aal2, loading, refresh };
