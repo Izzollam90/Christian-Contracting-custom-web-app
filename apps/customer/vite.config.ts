@@ -5,6 +5,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 export default defineConfig({
   // Load .env.local from the repository root so both apps share one config file.
   envDir: '../../',
+  server: { port: 5173, strictPort: true },
   plugins: [
     react(),
     VitePWA({

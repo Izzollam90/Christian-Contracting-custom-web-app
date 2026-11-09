@@ -15,7 +15,7 @@ console.log('Herkey setup check\n');
 // 1. .env.local exists and parses
 const envPath = join(root, '.env.local');
 if (!existsSync(envPath)) {
-  fail('.env.local not found', 'cp .env.example .env.local and fill in VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY from Supabase -> Project Settings -> API');
+  fail('.env.local not found', 'cp .env.example .env.local and fill in VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY from Supabase -> Settings -> API Keys');
 } else {
   pass('.env.local exists');
 }
@@ -23,70 +23,67 @@ const env = {};
 if (existsSync(envPath)) {
   for (const line of readFileSync(envPath, 'utf8').split(/\r?\n/)) {
     const m = /^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/.exec(line);
-    if (m && !m[2].startsWith('#')) env[m[1]] = m[2].replace(/^["']|["']$/g, '');
+    if (m && !m[2].startsWith('#')) env[m[1]] = m[2].trim().replace(/^["']|["']$/g, '');
   }
 }
 
-const url = env.VITE_SUPABASE_URL ?? '';
-const anon = env.VITE_SUPABASE_ANON_KEY ?? '';
-if (!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test(url)) {
-  fail('VITE_SUPABASE_URL is missing or malformed', 'copy "Project URL" from Supabase -> Project Settings -> API (looks like https://xxxx.supabase.co)');
+const url = (env.VITE_SUPABASE_URL ?? '').replace(/\/$/, '');
+const key = env.VITE_SUPABASE_ANON_KEY ?? '';
+if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(url)) {
+  fail('VITE_SUPABASE_URL is missing or malformed', 'copy "Project URL" from the Supabase Connect dialog (looks like https://xxxx.supabase.co)');
 } else pass('VITE_SUPABASE_URL looks right');
-if (!anon) fail('VITE_SUPABASE_ANON_KEY is empty', 'copy the "anon public" key from the same page. Never paste the service_role key here.');
-else pass('VITE_SUPABASE_ANON_KEY is set');
 
-if (!url || !anon) {
+let legacyRole;
+try {
+  legacyRole = JSON.parse(Buffer.from(key.split('.')[1] ?? '', 'base64url').toString()).role;
+} catch { /* Publishable keys are not JWTs. */ }
+if (!/^sb_publishable_[a-zA-Z0-9_-]+$/.test(key) && legacyRole !== 'anon') {
+  fail('VITE_SUPABASE_ANON_KEY is missing or is not a browser key', 'copy the Publishable key (or legacy anon key) from Supabase -> Settings -> API Keys');
+} else pass('VITE_SUPABASE_ANON_KEY has a browser key format');
+
+if (failures) {
   console.log(`\n${failures} problem(s). Fix the above and run pnpm check again.`);
   process.exit(1);
 }
 
-// 2. Project reachable + migration applied + seed applied + staff exist (anon key, RLS applies)
-const headers = { apikey: anon, Authorization: `Bearer ${anon}` };
-const rest = async (path, opts = {}) => {
-  const res = await fetch(`${url}/rest/v1/${path}`, { ...opts, headers: { ...headers, ...(opts.headers ?? {}) } });
-  let body = null;
-  try { body = await res.json(); } catch { /* empty */ }
-  return { status: res.status, body };
-};
+// A browser key can check connectivity, but RLS protects customer and staff rows.
+const request = (path) => fetch(`${url}${path}`, {
+  headers: { apikey: key },
+  signal: AbortSignal.timeout(15000),
+});
 
 console.log('\nChecking your Supabase project...');
 try {
-  const health = await fetch(`${url}/auth/v1/health`, { headers });
-  if (health.ok) pass('project is reachable, auth is up');
-  else fail('auth health endpoint returned ' + health.status, 'check VITE_SUPABASE_URL — it must be your own project, not a placeholder');
+  const auth = await request('/auth/v1/settings');
+  if (!auth.ok) {
+    fail(`Supabase Auth returned HTTP ${auth.status}`, 'verify that the Project URL and Publishable key belong to the same project');
+  } else {
+    const settings = await auth.json();
+    pass('Supabase Auth is reachable with your browser key');
+    if (settings.external?.google === true) pass('Google sign-in is enabled');
+    else fail('Google sign-in is disabled', 'enable Google under Supabase -> Authentication -> Providers and save the Google OAuth client ID and secret');
+    if (settings.passkeys_enabled === true) pass('Passkey sign-in is enabled');
+    else if (settings.passkeys_enabled === false) fail('Passkey sign-in is disabled', 'enable it under Supabase -> Authentication -> Passkeys and set the relying party domain and origins');
+    else info('Supabase did not report whether passkeys are enabled. Check Authentication -> Passkeys.');
+
+    const schema = await request('/rest/v1/service_categories?select=category&limit=0');
+    if (schema.ok) {
+      pass('Data API can see the service_categories table');
+    } else {
+      const body = await schema.json().catch(() => null);
+      if (['42P01', 'PGRST205'].includes(body?.code)) {
+        fail('service_categories is missing from the Data API schema', 'verify that the migrations are applied to this project and that the public schema is exposed');
+      } else if (body?.code === '42501' && [401, 403].includes(schema.status)) {
+        info('Anonymous access to service_categories is restricted. Verify schema and data from an authorized account.');
+      } else {
+        fail(`Data API returned HTTP ${schema.status}`, 'verify that the Data API is enabled and the project configuration is correct');
+      }
+    }
+  }
 } catch (e) {
-  fail('cannot reach ' + url, 'check the URL and your connection: ' + e.message);
+  fail(`Supabase check could not finish (${e.message})`, 'check the project URL, your connection, and Supabase project status');
 }
 
-const settings = await rest('settings?select=key&limit=1');
-if (settings.status === 200) {
-  pass('migration 0001_init.sql is applied (settings table exists)');
-} else if (settings.status === 401 || settings.status === 403 || settings.status === 404 || settings.body?.code === '42P01' || settings.body?.code === 'PGRST205') {
-  fail('database schema not found', 'open the Supabase SQL editor and run supabase/migrations/0001_init.sql, then run pnpm check again');
-} else {
-  info(`settings query returned ${settings.status} (${settings.body?.message ?? 'no message'})`);
-}
-
-if (settings.status === 200) {
-  const customers = await rest('customers?select=id&limit=1');
-  if (customers.status === 200 && Array.isArray(customers.body) && customers.body.length > 0) {
-    pass('seed.sql loaded (sample customers present)');
-  } else {
-    fail('sample data not loaded', 'run supabase/seed.sql in the SQL editor (AFTER the migration). Sample staff sign-ins come from: SUPABASE_SERVICE_ROLE_KEY=... in .env.local, then pnpm seed:users');
-  }
-  const staff = await rest('profiles?select=role&role=neq.Customer&limit=1');
-  if (staff.status === 200 && Array.isArray(staff.body) && staff.body.length > 0) {
-    pass('staff accounts exist with roles (seed:users done)');
-  } else {
-    fail('no staff roles yet', 'add SUPABASE_SERVICE_ROLE_KEY to .env.local (API page, scripts only) and run pnpm seed:users');
-  }
-}
-
-console.log('\nThen, in the Supabase dashboard:');
-console.log('  - Authentication -> Providers: enable Google; paste the client ID+secret from Google Cloud Console');
-console.log('  - Authentication -> Settings: enable WebAuthn passkeys and MFA (TOTP)');
-console.log('  - Authentication -> URL Configuration: add http://localhost:5173 and your deploy URLs');
-console.log('  - Authentication -> Settings: enable WebAuthn passkeys (needs HTTPS in production)');
-console.log('\nFinally: pnpm install && pnpm dev:customer  (and pnpm dev:staff in another terminal)');
-console.log(failures === 0 ? '\nSETUP LOOKS GOOD' : `\n${failures} problem(s) to fix — run pnpm check again after each fix.`);
-process.exit(failures === 0 ? 0 : 1);
+info('Seed data, staff access, and the OAuth round-trip must be verified after signing in.');
+console.log(failures === 0 ? '\nBROWSER CONFIGURATION CHECKS PASSED' : `\n${failures} problem(s) to fix. Run pnpm check again after each fix.`);
+process.exitCode = failures === 0 ? 0 : 1;

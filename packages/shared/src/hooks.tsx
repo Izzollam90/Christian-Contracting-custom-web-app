@@ -3,7 +3,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { supabase } from './supabase';
+import { hasSupabaseConfig, supabase } from './supabase';
 import type { Profile } from './types';
 
 interface AuthState {
@@ -34,17 +34,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    if (!hasSupabaseConfig) return;
+
     void (async () => {
       await refreshProfile();
       setLoading(false);
     })();
+    let profileRefresh: ReturnType<typeof setTimeout>;
     const { data: sub } = supabase().auth.onAuthStateChange(() => {
-      void refreshProfile();
+      // Keep requests that read the session outside the SDK auth event callback.
+      clearTimeout(profileRefresh);
+      profileRefresh = setTimeout(() => void refreshProfile(), 0);
     });
-    return () => sub.subscription.unsubscribe();
+    return () => {
+      clearTimeout(profileRefresh);
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   const value = useMemo(() => ({ session, profile, loading, refreshProfile }), [session, profile, loading]);
+  if (!hasSupabaseConfig) {
+    return (
+      <main className="wrap">
+        <section className="signin">
+          <div className="glass pad stack" role="alert">
+            <h1>Sign-in setup required</h1>
+            <p>Set the Supabase Project URL and Publishable key, then restart the app.</p>
+            {import.meta.env.DEV && <p>Use the repository-root <code>.env.local</code> and run <code>pnpm check</code>.</p>}
+          </div>
+        </section>
+      </main>
+    );
+  }
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
 }
 
