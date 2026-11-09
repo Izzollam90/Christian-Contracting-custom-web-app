@@ -2,6 +2,12 @@
 
 You are finishing the **Herkey Maintenance** apps: a Customer web app and a Crew & Office web app, with **Google + passkey sign-in only**, **two-factor authentication** on money and access actions, shared live data, and home-screen install. (Apple sign-in was dropped on Nov 6. See HANDOFF.md Phase 7.)
 
+
+## Repository privacy
+- All repositories for this project must be private. Agents must never make a repository public, create a public fork or mirror, or enable public hosting for this project. Only Matt may change visibility, manually in GitHub.
+- Verify the destination is private before pushing app code or uploading project files. If the destination is public or its visibility cannot be verified, stop and tell Matt.
+- Use GitHub access scoped to the private repository and the task. Agents must never request or use credentials with repository administration write access.
+
 ## Start here
 1. Read `HANDOFF.md` in full. It has the plan, phases, done-criteria and the decisions the owner still owes.
 2. Read `docs/requirements.md`. It's the behavior spec; follow it over anything you assume.
