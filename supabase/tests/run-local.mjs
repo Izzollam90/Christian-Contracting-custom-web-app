@@ -6,18 +6,16 @@
 // proves claim_job is atomic under two simultaneous sessions. Exits non-zero on any failure.
 //
 // Usage: cd supabase/tests && pnpm install && pnpm test
-import { readFileSync, readdirSync, existsSync, createWriteStream, mkdirSync, rmSync, symlinkSync, lstatSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync, createWriteStream, mkdtempSync, rmSync, symlinkSync, lstatSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { spawn } from 'node:child_process';
+import { tmpdir } from 'node:os';
 import pg from 'pg';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..', '..');
 const PORT = 55444;
-// The socket dir must be inside the workspace: sandboxed /tmp is per-process and the socket
-// would not be visible to the pg client.
-const SOCKET_DIR = join(here, '.sock');
 const DATABASE = 'herkey_test';
 const DATA_DIR = join(here, '.pgdata');
 
@@ -96,23 +94,34 @@ async function main() {
 
   console.log('Initializing embedded Postgres cluster...');
   rmSync(DATA_DIR, { recursive: true, force: true });
-  rmSync(SOCKET_DIR, { recursive: true, force: true });
-  mkdirSync(SOCKET_DIR, { recursive: true });
   await run(join(bin, 'initdb'), ['-D', DATA_DIR, '-U', 'postgres', '--auth=trust', '-E', 'UTF8'], false);
+  // Keep the Unix socket path short even when the repository is nested deeply.
+  const socketDir = mkdtempSync(join(tmpdir(), 'herkey-pg-'));
   const serverLog = createWriteStream(join(here, 'postgres.log'));
   const server = spawn(join(bin, 'postgres'),
-    ['-D', DATA_DIR, '-k', SOCKET_DIR, '-p', String(PORT), '-c', 'listen_addresses='], {});
+    ['-D', DATA_DIR, '-k', socketDir, '-p', String(PORT), '-c', 'listen_addresses='], {});
+  process.once('exit', () => {
+    server.kill('SIGINT');
+    rmSync(socketDir, { recursive: true, force: true });
+  });
+  let startupError = '';
   server.stdout.on('data', (d) => serverLog.write(d));
+  const logStartupError = (d) => { startupError = (startupError + d).slice(-2000); };
+  server.stderr.on('data', logStartupError);
   server.stderr.on('data', (d) => serverLog.write(d));
   const connect = (db = 'postgres') => new pg.Client({
-    host: SOCKET_DIR, port: PORT, user: 'postgres', database: db,
+    host: socketDir, port: PORT, user: 'postgres', database: db,
   });
   let probe = null;
   for (let i = 0; i < 120; i++) {
+    if (server.exitCode !== null || server.signalCode !== null) {
+      throw new Error(`Postgres exited during startup.\n${startupError.trim()}`);
+    }
     try { probe = connect(); await probe.connect(); break; }
     catch { probe = null; if (i === 119) throw new Error('postgres did not come up'); await new Promise((r) => setTimeout(r, 500)); }
   }
   await waitReady(probe);
+  server.stderr.off('data', logStartupError);
   console.log('Postgres is up.');
 
   await probe.query(`drop database if exists ${DATABASE}`);
@@ -237,7 +246,6 @@ async function main() {
   else bad(`${doubleClaims}/${ROUNDS} rounds had both claims succeed`);
 
   await db.end();
-  server.kill('SIGINT');
   console.log(failures === 0 ? '\nALL DATABASE TESTS PASSED' : `\n${failures} FAILURE(S)`);
   process.exit(failures === 0 ? 0 : 1);
 }

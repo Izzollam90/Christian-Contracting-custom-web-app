@@ -10,13 +10,13 @@ Both need Google and passkey sign-in, two-factor authentication on money and acc
 
 ```
 pnpm install
-cp .env.example .env.local    # paste Project URL + anon public key from Supabase -> Project Settings -> API
-pnpm check                    # PASS/FAIL checklist against your live Supabase project; prints the exact fix for anything missing
+cp .env.example .env.local    # paste the Project URL and Publishable key from Supabase
+pnpm check                    # check browser credentials, Data API reachability, and whether Google is enabled
 pnpm dev:customer             # http://localhost:5173
-pnpm dev:staff                # http://localhost:5174
+pnpm dev:staff --port 5174     # http://localhost:5174 (use a second terminal)
 ```
 
-The checker is `pnpm check` — bare `pnpm setup` is a pnpm builtin and never runs the repo script.
+Run `pnpm check` for setup diagnostics. It uses the browser key, so verify seed data and staff access after signing in. Add both local URLs to Supabase Auth's redirect allow-list when testing both apps.
 
 For coding agents finishing the build: start with [`AGENTS.md`](AGENTS.md) and [`HANDOFF.md`](HANDOFF.md).
 
@@ -34,9 +34,9 @@ All people, jobs and amounts in this repo are fictional sample data.
 ```
 pnpm install
 cp .env.example .env.local    # fill in VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY
-pnpm check                    # check .env.local against the live project until all PASS
+pnpm check                    # check .env.local and live Supabase browser configuration
 pnpm dev:customer             # customer app
-pnpm dev:staff                # crew & office app
+pnpm dev:staff --port 5174     # crew & office app
 pnpm typecheck && pnpm build  # verify
 pnpm test:db                  # migration + seed + RLS proof on embedded Postgres
 ```
